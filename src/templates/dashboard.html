@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text2: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 32px 20px;
+        }
+
+        .container { max-width: 680px; margin: 0 auto; }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        .greeting h1 { font-size: 22px; font-weight: 700; }
+        .greeting p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+
+        .avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px;
+            color: #0d1117;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+        .card-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text2);
+            margin-bottom: 16px;
+        }
+
+        /* Game launch card */
+        .game-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(135deg, #0d1117, #161b22);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color .15s, transform .15s;
+        }
+        .game-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+        .game-icon {
+            font-size: 48px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .game-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .game-desc { font-size: 13px; color: var(--text2); }
+        .game-badge {
+            margin-left: auto;
+            background: var(--accent);
+            color: #0d1117;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        /* Quick links */
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .action-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.05); }
+        .action-btn .icon { font-size: 18px; }
+
+        /* Footer */
+        .footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text2);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="greeting">
+            <h1>Hallo, {{ username }} 👋</h1>
+            <p>Bereit für eine Runde Monopoly?</p>
+        </div>
+        <div class="avatar">{{ username[:2]|upper }}</div>
+    </div>
+
+    <!-- Monopoly-Start -->
+    <a href="/monopoly" class="game-card">
+        <div class="game-icon">🎲</div>
+        <div>
+            <div class="game-title">Monopoly Online</div>
+            <div class="game-desc">Spiele mit Freunden auf einem vollständigen 40-Felder-Brett</div>
+        </div>
+        <div class="game-badge">Spielen →</div>
+    </a>
+
+    <!-- Quick Actions -->
+    <div class="card">
+        <div class="card-label">Schnellzugriff</div>
+        <div class="actions">
+            <a href="/monopoly" class="action-btn">
+                <span class="icon">🎮</span>
+                <span>Spiel beitreten</span>
+            </a>
+            <a href="/logout" class="action-btn">
+                <span class="icon">🚪</span>
+                <span>Abmelden</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">Monopoly Online &middot; Viel Spaß beim Spielen!</div>
+</div>
+</body>
+</html>

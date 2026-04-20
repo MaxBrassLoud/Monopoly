@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0d1117;
+            --bg2: #161b22;
+            --bg3: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text2: #8b949e;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --danger: #f85149;
+            --warning: #e3b341;
+            --radius: 8px;
+            --radius-lg: 12px;
+
+            --brown: #795548;
+            --lightblue: #29b6f6;
+            --pink: #ec407a;
+            --orange: #ff7043;
+            --red: #ef5350;
+            --yellow: #ffd740;
+            --green: #66bb6a;
+            --darkblue: #1565c0;
+            --station: #78909c;
+            --utility: #ab47bc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header a {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all .15s;
+        }
+        .header a:hover { background: var(--bg3); color: var(--text); }
+
+        /* ── Layout ── */
+        .game-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ── Board ── */
+        .board-wrapper {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-template-rows: repeat(11, 1fr);
+            gap: 2px;
+            aspect-ratio: 1;
+            width: 100%;
+        }
+
+        .field {
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px;
+            font-size: 8px;
+            color: var(--text2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: border-color .15s;
+            overflow: hidden;
+        }
+        .field:hover { border-color: var(--accent); }
+        .field.special { background: var(--bg); }
+        .field.center-area {
+            grid-column: 2 / 11;
+            grid-row: 2 / 11;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            border-radius: var(--radius);
+        }
+
+        .color-bar {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            border-radius: 3px 3px 0 0;
+        }
+        .field-name {
+            font-size: 7px;
+            line-height: 1.2;
+            text-align: center;
+            color: var(--text);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+        .field-price {
+            font-size: 6px;
+            color: var(--text2);
+            margin-top: 2px;
+        }
+        .field-owner-badge {
+            position: absolute;
+            bottom: 2px; right: 2px;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,.3);
+        }
+
+        /* Player tokens on board */
+        .tokens-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            justify-content: center;
+            margin-top: 4px;
+        }
+        .token {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,.5);
+            flex-shrink: 0;
+            transition: transform .3s ease;
+        }
+        .token.highlight { transform: scale(1.3); box-shadow: 0 0 6px currentColor; }
+
+        /* Center logo */
+        .center-logo {
+            text-align: center;
+        }
+        .center-logo .title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #58a6ff, #3fb950);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .center-logo .sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+        /* ── Sidebar ── */
+        .sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+        .panel {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+        }
+        .panel-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            color: var(--text2);
+            margin-bottom: 12px;
+        }
+
+        /* Player cards */
+        .player-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            transition: border-color .2s;
+            background: var(--bg3);
+        }
+        .player-card.active {
+            border-color: var(--warning);
+            background: rgba(227, 179, 65, .05);
+        }
+        .player-card.bankrupt { opacity: .4; }
+        .player-avatar {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px;
+            flex-shrink: 0;
+            color: white;
+        }
+        .player-name { font-size: 13px; font-weight: 600; }
+        .player-money { font-size: 12px; color: var(--accent2); font-weight: 600; margin-top: 1px; }
+        .player-props { font-size: 11px; color: var(--text2); }
+        .turn-badge {
+            margin-left: auto;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--warning);
+            border: 1px solid var(--warning);
+            border-radius: 4px;
+            padding: 2px 5px;
+        }
+
+        /* Status & Dice */
+        .status-box {
+            background: var(--bg3);
+            border-radius: var(--radius);
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text);
+            min-height: 60px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .dice-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .die {
+            width: 44px; height: 44px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #1a1a2e;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,.4);
+            transition: transform .3s;
+        }
+        .die.rolling { animation: roll .3s ease; }
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: inherit;
+            width: 100%;
+            margin-bottom: 6px;
+        }
+        .btn:hover:not(:disabled) { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+        .btn:disabled { opacity: .35; cursor: not-allowed; }
+        .btn.primary { background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 600; }
+        .btn.primary:hover:not(:disabled) { background: #79bcff; border-color: #79bcff; color: #0d1117; }
+        .btn.success { background: var(--accent2); border-color: var(--accent2); color: #0d1117; font-weight: 600; }
+        .btn.danger { border-color: var(--danger); color: var(--danger); }
+        .btn.danger:hover:not(:disabled) { background: rgba(248,81,73,.1); }
+
+        /* Event notification */
+        .event-toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px 18px;
+            max-width: 300px;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0,0,0,.5);
+            transform: translateX(400px);
+            transition: transform .3s ease;
+            font-size: 13px;
+        }
+        .event-toast.show { transform: translateX(0); }
+        .event-toast .toast-icon { font-size: 20px; margin-bottom: 6px; }
+        .event-toast .toast-text { color: var(--text); line-height: 1.4; }
+
+        /* Field tooltip */
+        .field-tooltip {
+            position: fixed;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            font-size: 12px;
+            z-index: 999;
+            max-width: 200px;
+            pointer-events: none;
+            display: none;
+        }
+        .tooltip-title { font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+        .tooltip-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text2); margin: 2px 0; }
+        .tooltip-row span:last-child { color: var(--text); font-weight: 500; }
+
+        /* Color group indicator */
+        .color-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+
+        /* Join modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            width: 320px;
+        }
+        .modal h3 { margin-bottom: 16px; font-size: 16px; }
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .color-option {
+            height: 44px;
+            border-radius: var(--radius);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: border-color .15s, transform .15s;
+        }
+        .color-option:hover { transform: scale(1.05); }
+        .color-option.selected { border-color: white; }
+        .modal-actions { display: flex; gap: 8px; }
+        .modal-actions .btn { flex: 1; margin-bottom: 0; }
+
+        @media (max-width: 900px) {
+            .game-layout { grid-template-columns: 1fr; }
+            .sidebar { order: -1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🎲 Monopoly</h1>
+    <a href="/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Dashboard</a>
+</div>
+
+<div class="game-layout">
+    <!-- ── SPIELBRETT ── -->
+    <div class="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+
+        <!-- Status -->
+        <div class="panel">
+            <div class="panel-title">Spielstand</div>
+            <div class="status-box" id="status-box">Lade Spiel...</div>
+            <div class="dice-display" id="dice-display" style="display:none;">
+                <div class="die" id="die1">1</div>
+                <span style="color:var(--text2); font-weight:600;">+</span>
+                <div class="die" id="die2">1</div>
+                <span style="font-size:18px; color:var(--text); font-weight:700;" id="dice-sum">=2</span>
+            </div>
+        </div>
+
+        <!-- Aktionen -->
+        <div class="panel">
+            <div class="panel-title">Aktionen</div>
+            <button class="btn primary" id="btn-roll" onclick="rollDice()" disabled>🎲 Würfeln</button>
+            <button class="btn success" id="btn-buy" onclick="buyProperty()" disabled>🏷️ Kaufen</button>
+            <button class="btn" id="btn-end" onclick="endTurn()" disabled>⏭️ Zug beenden</button>
+            <button class="btn" onclick="showJoinModal()">➕ Spiel beitreten</button>
+            <button class="btn danger" onclick="resetGame()">🔄 Spiel zurücksetzen</button>
+        </div>
+
+        <!-- Spieler -->
+        <div class="panel">
+            <div class="panel-title">Spieler</div>
+            <div id="players-list"></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── Tooltip ── -->
+<div class="field-tooltip" id="tooltip"></div>
+
+<!-- ── Event Toast ── -->
+<div class="event-toast" id="toast">
+    <div class="toast-icon" id="toast-icon"></div>
+    <div class="toast-text" id="toast-text"></div>
+</div>
+
+<!-- ── Join Modal ── -->
+<div class="modal-overlay" id="join-modal">
+    <div class="modal">
+        <h3>Spiel beitreten</h3>
+        <p style="color:var(--text2); font-size:13px; margin-bottom:14px;">Wähle deine Farbe:</p>
+        <div class="color-grid" id="color-grid"></div>
+        <div class="modal-actions">
+            <button class="btn" onclick="hideJoinModal()">Abbrechen</button>
+            <button class="btn primary" onclick="joinGame()">Beitreten</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const currentUsername = "{{ session['username'] }}";
+let gameState = null;
+let selectedColor = "red";
+let pollInterval = null;
+let toastTimeout = null;
+
+const COLOR_MAP = {
+    brown: "#795548", lightblue: "#29b6f6", pink: "#ec407a", orange: "#ff7043",
+    red: "#ef5350", yellow: "#ffd740", green: "#66bb6a", darkblue: "#1565c0",
+    station: "#78909c", utility: "#ab47bc", special: "transparent"
+};
+const DICE_FACES = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+const PLAYER_COLORS = {
+    blue: "#58a6ff", red: "#f85149", green: "#3fb950", yellow: "#e3b341",
+    purple: "#8b5cf6", orange: "#fb923c"
+};
+
+// ── Board-Rendering ──────────────────────────────────────────
+
+function renderBoard(state) {
+    const boardDiv = document.getElementById("board");
+    boardDiv.innerHTML = "";
+    if (!state.board || state.board.length !== 40) return;
+
+    const board = state.board;
+
+    // Positionen im 11×11-Grid:
+    // Reihe 10 (unten): Felder 0..10   → col 10..0, row 10
+    // Spalte 0 (links): Felder 11..20  → col 0, row 9..0
+    // Reihe 0 (oben):   Felder 21..30  → col 1..10, row 0
+    // Spalte 10 (rechts): Felder 31..39 → col 10, row 1..9
+
+    const positions = [];
+    // Unten: Felder 0–10, von rechts nach links (col 10 bis 0)
+    for (let i = 0; i <= 10; i++) positions.push({ fieldIdx: i, col: 10 - i, row: 10 });
+    // Links: Felder 11–19, von unten nach oben (row 9 bis 1)
+    for (let i = 11; i <= 19; i++) positions.push({ fieldIdx: i, col: 0, row: 10 - (i - 10) });
+    // Links-Ecke oben: Feld 20
+    positions.push({ fieldIdx: 20, col: 0, row: 0 });
+    // Oben: Felder 21–29, von links nach rechts (col 1 bis 9)
+    for (let i = 21; i <= 29; i++) positions.push({ fieldIdx: i, col: i - 20, row: 0 });
+    // Rechts-Ecke oben: Feld 30
+    positions.push({ fieldIdx: 30, col: 10, row: 0 });
+    // Rechts: Felder 31–39, von oben nach unten (row 1 bis 9)
+    for (let i = 31; i <= 39; i++) positions.push({ fieldIdx: i, col: 10, row: i - 30 });
+
+    // Grid-Elemente erstellen (11×11 = 121, aber Center = 1 Element)
+    const cells = {};
+    positions.forEach(({ fieldIdx, col, row }) => {
+        cells[`${row}-${col}`] = fieldIdx;
+    });
+
+    for (let row = 0; row <= 10; row++) {
+        for (let col = 0; col <= 10; col++) {
+            if (row >= 1 && row <= 9 && col >= 1 && col <= 9) continue; // Center skip
+
+            const key = `${row}-${col}`;
+            const fieldIdx = cells[key];
+            if (fieldIdx === undefined) continue;
+
+            const field = board[fieldIdx];
+            const el = document.createElement("div");
+            el.className = "field" + (field.field_type === "special" ? " special" : "");
+            el.style.gridColumn = col + 1;
+            el.style.gridRow = row + 1;
+            el.dataset.fieldIdx = fieldIdx;
+
+            // Farbbalken
+            const color = COLOR_MAP[field.color_group] || "transparent";
+            if (color !== "transparent") {
+                const bar = document.createElement("div");
+                bar.className = "color-bar";
+                bar.style.background = color;
+                el.appendChild(bar);
+            }
+
+            // Name
+            const nameEl = document.createElement("div");
+            nameEl.className = "field-name";
+            nameEl.textContent = field.name;
+            el.appendChild(nameEl);
+
+            // Preis
+            if (field.price > 0) {
+                const priceEl = document.createElement("div");
+                priceEl.className = "field-price";
+                priceEl.textContent = `${field.price}€`;
+                el.appendChild(priceEl);
+            }
+
+            // Besitzer-Badge
+            if (field.owner_color) {
+                const badge = document.createElement("div");
+                badge.className = "field-owner-badge";
+                badge.style.background = PLAYER_COLORS[field.owner_color] || "#888";
+                el.appendChild(badge);
+            }
+
+            // Spieler-Tokens
+            const tokensHere = state.players.filter(p => p.position === fieldIdx && !p.is_bankrupt);
+            if (tokensHere.length) {
+                const row2 = document.createElement("div");
+                row2.className = "tokens-row";
+                tokensHere.forEach(p => {
+                    const t = document.createElement("div");
+                    t.className = "token" + (p.username === state.current_player ? " highlight" : "");
+                    t.style.background = PLAYER_COLORS[p.color] || "#888";
+                    t.title = p.username;
+                    row2.appendChild(t);
+                });
+                el.appendChild(row2);
+            }
+
+            // Tooltip
+            el.addEventListener("mousemove", (e) => showTooltip(e, field, fieldIdx, state));
+            el.addEventListener("mouseleave", hideTooltip);
+
+            boardDiv.appendChild(el);
+        }
+    }
+
+    // Center-Bereich
+    const center = document.createElement("div");
+    center.className = "field center-area";
+    center.style.gridColumn = "2 / 11";
+    center.style.gridRow = "2 / 11";
+    center.innerHTML = `
+        <div class="center-logo">
+            <div class="title">MONOPOLY</div>
+            <div class="sub">${state.players.length} Spieler online</div>
+        </div>
+    `;
+    boardDiv.appendChild(center);
+}
+
+// ── Tooltip ─────────────────────────────────────────────────
+
+function showTooltip(e, field, idx, state) {
+    const t = document.getElementById("tooltip");
+    let html = `<div class="tooltip-title">${field.name}</div>`;
+
+    if (field.price > 0) {
+        html += `<div class="tooltip-row"><span>Preis</span><span>${field.price} €</span></div>`;
+        if (field.current_rent) html += `<div class="tooltip-row"><span>Miete</span><span>${field.current_rent} €</span></div>`;
+        if (field.owner) html += `<div class="tooltip-row"><span>Besitzer</span><span>${field.owner}</span></div>`;
+        else html += `<div class="tooltip-row"><span>Status</span><span style="color:var(--accent2)">Kaufbar</span></div>`;
+    } else {
+        const specials = { 0: "Erhalte 200 € beim Vorbeiziehen", 10: "Besuch / Gefängnis", 20: "Frei Parken", 30: "Gehe ins Gefängnis" };
+        if (specials[idx]) html += `<div style="color:var(--text2);font-size:11px;margin-top:4px;">${specials[idx]}</div>`;
+    }
+
+    t.innerHTML = html;
+    t.style.display = "block";
+    t.style.left = `${e.clientX + 12}px`;
+    t.style.top = `${e.clientY - 8}px`;
+}
+
+function hideTooltip() {
+    document.getElementById("tooltip").style.display = "none";
+}
+
+// ── Spieler-Panel ────────────────────────────────────────────
+
+function renderPlayers(state) {
+    const list = document.getElementById("players-list");
+    list.innerHTML = "";
+    if (!state.players.length) {
+        list.innerHTML = `<p style="color:var(--text2);font-size:13px;">Noch keine Spieler. Tritt dem Spiel bei!</p>`;
+        return;
+    }
+    state.players.forEach(p => {
+        const isActive = p.username === state.current_player;
+        const initials = p.username.substring(0, 2).toUpperCase();
+        const card = document.createElement("div");
+        card.className = "player-card" + (isActive ? " active" : "") + (p.is_bankrupt ? " bankrupt" : "");
+        card.innerHTML = `
+            <div class="player-avatar" style="background:${PLAYER_COLORS[p.color]||'#888'};">${initials}</div>
+            <div style="flex:1;min-width:0;">
+                <div class="player-name" style="display:flex;align-items:center;gap:4px;">
+                    ${p.username}
+                    ${p.username === currentUsername ? '<span style="font-size:10px;color:var(--text2);font-weight:400;">(Du)</span>' : ""}
+                    ${p.in_jail ? '<span style="font-size:10px;color:var(--danger);">⛓️ Gefängnis</span>' : ""}
+                </div>
+                <div class="player-money">${p.money.toLocaleString("de-DE")} €</div>
+                <div class="player-props">${p.properties.length} Grundstück${p.properties.length !== 1 ? "e" : ""}</div>
+            </div>
+            ${isActive ? '<div class="turn-badge">AM ZUG</div>' : ""}
+        `;
+        list.appendChild(card);
+    });
+}
+
+// ── UI-State ─────────────────────────────────────────────────
+
+function updateButtons(state) {
+    const isMyTurn = state.current_player === currentUsername;
+    const phase = state.turn_phase;
+
+    const btnRoll = document.getElementById("btn-roll");
+    const btnBuy = document.getElementById("btn-buy");
+    const btnEnd = document.getElementById("btn-end");
+
+    btnRoll.disabled = !isMyTurn || phase !== "roll";
+    btnBuy.disabled = !isMyTurn || !state.can_buy;
+    btnEnd.disabled = !isMyTurn || phase === "roll";
+
+    document.getElementById("status-box").textContent = state.status || "";
+
+    // Würfel
+    const diceDiv = document.getElementById("dice-display");
+    if (state.dice) {
+        diceDiv.style.display = "flex";
+        document.getElementById("die1").textContent = DICE_FACES[state.dice[0]];
+        document.getElementById("die2").textContent = DICE_FACES[state.dice[1]];
+        document.getElementById("dice-sum").textContent = `= ${state.dice[0] + state.dice[1]}`;
+    } else {
+        diceDiv.style.display = "none";
+    }
+}
+
+// ── Toast ────────────────────────────────────────────────────
+
+function showToast(icon, text) {
+    const toast = document.getElementById("toast");
+    document.getElementById("toast-icon").textContent = icon;
+    document.getElementById("toast-text").textContent = text;
+    toast.classList.add("show");
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove("show"), 3500);
+}
+
+function handleEvent(event) {
+    if (!event) return;
+    const icons = { jail: "⛓️", rent: "💸", card: "🃏", tax: "🏛️", bankrupt: "💀", land_empty: "🏷️" };
+    showToast(icons[event.type] || "📢", document.getElementById("status-box").textContent);
+}
+
+// ── API-Calls ────────────────────────────────────────────────
+
+async function fetchState(silent = false) {
+    try {
+        const res = await fetch("/api/game/state");
+        if (!res.ok) return;
+        const newState = await res.json();
+        const oldStatus = gameState?.status;
+        gameState = newState;
+        renderBoard(gameState);
+        renderPlayers(gameState);
+        updateButtons(gameState);
+        if (!silent && oldStatus !== gameState.status && gameState.last_event) {
+            handleEvent(gameState.last_event);
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function rollDice() {
+    document.getElementById("btn-roll").disabled = true;
+    // Würfel-Animation
+    const d1 = document.getElementById("die1");
+    const d2 = document.getElementById("die2");
+    document.getElementById("dice-display").style.display = "flex";
+    d1.classList.add("rolling"); d2.classList.add("rolling");
+    setTimeout(() => { d1.classList.remove("rolling"); d2.classList.remove("rolling"); }, 300);
+
+    const res = await fetch("/api/game/roll", { method: "POST" });
+    if (!res.ok) {
+        const data = await res.json();
+        showToast("❌", data.error || "Fehler beim Würfeln");
+        return;
+    }
+    gameState = await res.json();
+    renderBoard(gameState);
+    renderPlayers(gameState);
+    updateButtons(gameState);
+    if (gameState.last_event) handleEvent(gameState.last_event);
+}
+
+async function buyProperty() {
+    const res = await fetch("/api/game/buy", { method: "POST" });
+    const data = await res.json();
+    if (data.success) {
+        gameState = data.game;
+        renderBoard(gameState);
+        renderPlayers(gameState);
+        updateButtons(gameState);
+        showToast("🏠", gameState.status);
+    } else {
+        showToast("❌", "Kauf nicht möglich");
+    }
+}
+
+async function endTurn() {
+    const res = await fetch("/api/game/end_turn", { method: "POST" });
+    if (!res.ok) {
+        showToast("❌", "Fehler");
+        return;
+    }
+    gameState = await res.json();
+    renderBoard(gameState);
+    renderPlayers(gameState);
+    updateButtons(gameState);
+}
+
+async function joinGame() {
+    const res = await fetch("/api/game/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color: selectedColor })
+    });
+    const data = await res.json();
+    hideJoinModal();
+    if (data.success) {
+        gameState = data.game;
+        renderBoard(gameState);
+        renderPlayers(gameState);
+        updateButtons(gameState);
+        showToast("🎉", `Du bist dem Spiel als ${selectedColor} beigetreten!`);
+    } else {
+        showToast("❌", data.error || "Beitreten fehlgeschlagen");
+    }
+}
+
+async function resetGame() {
+    if (!confirm("Spiel wirklich zurücksetzen?")) return;
+    await fetch("/api/game/reset", { method: "POST" });
+    fetchState();
+    showToast("🔄", "Spiel wurde zurückgesetzt");
+}
+
+// ── Join Modal ───────────────────────────────────────────────
+
+function showJoinModal() {
+    const grid = document.getElementById("color-grid");
+    grid.innerHTML = "";
+    const colors = ["blue", "red", "green", "yellow", "purple", "orange"];
+    colors.forEach(c => {
+        const opt = document.createElement("div");
+        opt.className = "color-option" + (c === selectedColor ? " selected" : "");
+        opt.style.background = PLAYER_COLORS[c];
+        opt.title = c;
+        opt.onclick = () => {
+            document.querySelectorAll(".color-option").forEach(el => el.classList.remove("selected"));
+            opt.classList.add("selected");
+            selectedColor = c;
+        };
+        grid.appendChild(opt);
+    });
+    document.getElementById("join-modal").classList.add("show");
+}
+
+function hideJoinModal() {
+    document.getElementById("join-modal").classList.remove("show");
+}
+
+// Klick außerhalb schließt Modal
+document.getElementById("join-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) hideJoinModal();
+});
+
+// ── Init ─────────────────────────────────────────────────────
+
+fetchState(true);
+pollInterval = setInterval(() => fetchState(true), 3000);
+</script>
+</body>
+</html>

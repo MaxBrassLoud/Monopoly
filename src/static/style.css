@@ -1,0 +1,193 @@
+/* ===== BASIS ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(145deg, #0b0f1c 0%, #1a1f33 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #eef2ff;
+    padding: 1.5rem;
+}
+
+/* ===== KARTE (GLASMORPHISMUS) ===== */
+.card {
+    background: rgba(20, 28, 45, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 32px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(56, 189, 248, 0.1) inset;
+    transition: transform 0.25s ease, box-shadow 0.3s ease;
+    text-align: center;
+}
+
+.card:hover {
+    box-shadow: 0 30px 50px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(56, 189, 248, 0.2) inset;
+    transform: translateY(-4px);
+}
+
+/* ===== TYPOGRAPHIE ===== */
+h1, h2 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.75rem;
+}
+
+h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(to right, #fff, #cbd5e1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+h2 {
+    font-size: 1.9rem;
+    color: #f1f5f9;
+}
+
+/* ===== EINGABEFELDER ===== */
+input {
+    display: block;
+    width: 100%;
+    margin: 0 auto 1rem auto;
+    padding: 0.9rem 1.2rem;
+    background: rgba(10, 18, 30, 0.6);
+    border: 1.5px solid rgba(71, 85, 105, 0.4);
+    border-radius: 20px;
+    font-size: 1rem;
+    color: #f8fafc;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+input::placeholder {
+    color: #7f8ea3;
+    font-weight: 300;
+    opacity: 0.8;
+}
+
+input:focus {
+    border-color: #38bdf8;
+    background: rgba(15, 25, 40, 0.8);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+}
+
+/* ===== BUTTONS ===== */
+button {
+    display: inline-block;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    margin-top: 0.5rem;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.3px;
+    color: white;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+button:hover {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 12px 24px -8px rgba(59, 130, 246, 0.6);
+    transform: scale(1.01);
+}
+
+button:active {
+    transform: scale(0.99);
+    box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.5);
+}
+
+/* Discord Button speziell */
+.discord-btn {
+    background: linear-gradient(135deg, #5865F2, #4752c4);
+    box-shadow: 0 8px 20px -6px rgba(88, 101, 242, 0.4);
+    margin-top: 1.2rem;
+}
+
+.discord-btn:hover {
+    background: linear-gradient(135deg, #6d7aff, #5865F2);
+    box-shadow: 0 12px 24px -8px rgba(88, 101, 242, 0.6);
+}
+
+/* ===== TRENNLINIE / TEXT ===== */
+p {
+    margin: 1.5rem 0 1rem;
+    color: #94a3b8;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+p::before,
+p::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 25%;
+    height: 1px;
+    background: rgba(148, 163, 184, 0.3);
+}
+
+p::before {
+    left: 0;
+}
+
+p::after {
+    right: 0;
+}
+
+/* ===== DASHBOARD SPEZIFISCH ===== */
+.card a {
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 2rem;
+}
+
+/* Logout Button als Outline */
+.card a button {
+    background: transparent;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+    backdrop-filter: blur(4px);
+    color: #e2e8f0;
+    font-weight: 500;
+    transition: all 0.25s;
+}
+
+.card a button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 480px) {
+    .card {
+        padding: 2rem 1.5rem;
+        border-radius: 28px;
+    }
+
+    h1 {
+        font-size: 1.9rem;
+    }
+
+    input {
+        padding: 0.8rem 1rem;
+    }
+}
