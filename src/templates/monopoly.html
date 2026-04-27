@@ -433,6 +433,11 @@
             <button class="btn" onclick="showJoinModal()">➕ Spiel beitreten</button>
             <button class="btn danger" onclick="resetGame()">🔄 Spiel zurücksetzen</button>
         </div>
+                <!-- direkt nach dem Aktions-Panel in der Sidebar einfügen -->
+        <div class="panel" id="properties-panel" style="display:none;">
+            <div class="panel-title">Meine Grundstücke</div>
+            <div id="my-properties-list"></div>
+        </div>
 
         <!-- Spieler -->
         <div class="panel">
@@ -824,7 +829,87 @@ function hideJoinModal() {
 document.getElementById("join-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) hideJoinModal();
 });
+// –– Eigene Grundstücke anzeigen ––
+function renderMyProperties(state) {
+    const panel = document.getElementById("properties-panel");
+    const list = document.getElementById("my-properties-list");
+    const me = state.players.find(p => p.username === currentUsername);
 
+    // Nur zeigen, wenn ich an der Reihe bin und Grundstücke habe
+    if (!me || me.username !== state.current_player || !me.properties || me.properties.length === 0) {
+        panel.style.display = "none";
+        return;
+    }
+    panel.style.display = "block";
+    list.innerHTML = "";
+
+    me.properties.forEach(prop => {
+        const row = document.createElement("div");
+        row.className = "prop-row";
+
+        // Name
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "prop-name";
+        nameSpan.textContent = prop.name;
+        row.appendChild(nameSpan);
+
+        // Häuser / Hotel
+        const housesSpan = document.createElement("span");
+        housesSpan.className = "prop-houses";
+        if (prop.houses === 5) {
+            housesSpan.innerHTML = "🏨 Hotel";
+        } else {
+            housesSpan.innerHTML = "🏠".repeat(prop.houses) || "0";
+        }
+        row.appendChild(housesSpan);
+
+        // Button Haus bauen
+        const houseBtn = document.createElement("button");
+        houseBtn.className = "build-btn";
+        houseBtn.innerHTML = `+🏠 <span class="build-cost">${prop.house_cost}€</span>`;
+        houseBtn.disabled = !prop.can_build_house;
+        houseBtn.title = prop.can_build_house ? "Haus bauen" : "Bauen nicht möglich";
+        houseBtn.onclick = () => buildProperty(prop.name, "house");
+        row.appendChild(houseBtn);
+
+        // Button Hotel bauen
+        const hotelBtn = document.createElement("button");
+        hotelBtn.className = "build-btn";
+        hotelBtn.innerHTML = `+🏨 <span class="build-cost">${prop.house_cost}€</span>`;
+        hotelBtn.disabled = !prop.can_build_hotel;
+        hotelBtn.title = prop.can_build_hotel ? "Hotel bauen" : "Hotel nicht möglich";
+        hotelBtn.onclick = () => buildProperty(prop.name, "hotel");
+        row.appendChild(hotelBtn);
+
+        list.appendChild(row);
+    });
+}
+
+// –– API-Call zum Bauen ––
+async function buildProperty(propertyName, type) {
+    const res = await fetch("/api/game/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ property: propertyName, type: type })
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        showToast("❌", data.error || "Bauen fehlgeschlagen");
+        return;
+    }
+    const newState = await res.json();
+    gameState = newState;
+    renderBoard(gameState);
+    renderPlayers(gameState);
+    renderMyProperties(gameState);   // Panel sofort aktualisieren
+    updateButtons(gameState);
+    if (gameState.last_event) handleEvent(gameState.last_event);
+}
+
+// –– updateUI() so anpassen, dass renderMyProperties aufgerufen wird ––
+// (in der vorhandenen fetchState-Funktion oder im pollInterval-Callback)
+// Ergänze nach renderPlayers:
+renderMyProperties(gameState);
 // ── Init ─────────────────────────────────────────────────────
 
 fetchState(true);

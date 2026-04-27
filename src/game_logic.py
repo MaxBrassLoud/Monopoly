@@ -3,6 +3,33 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 
+# ── Chance / Gemeinschaftsfeld-Karten ───────────────────────────
+
+CHANCE_CARDS = [
+    {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
+    {"text": "Du erhältst ein Bankfehler zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
+    {"text": "Du hast eine Strafe erhalten. Zahle 100 €.", "action": "money", "value": -100},
+    {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
+    {"text": "Gehe zur nächsten Station.", "action": "next_station", "value": 0},
+    {"text": "Du gewinnst zweiten Preis in einem Schönheitswettbewerb. Erhalte 10 €.", "action": "money", "value": 10},
+    {"text": "Fälligkeit der Schulden. Zahle 50 €.", "action": "money", "value": -50},
+    {"text": "Kurreise nach Bad Homburg. Zahle 100 €.", "action": "money", "value": -100},
+    {"text": "Du wirst freigelassen! Freie Karte aus dem Gefängnis.", "action": "jail_card", "value": 0},
+    {"text": "Rücke 3 Felder zurück.", "action": "move", "value": -3},
+]
+
+COMMUNITY_CARDS = [
+    {"text": "Du erbst 100 €.", "action": "money", "value": 100},
+    {"text": "Arztkosten. Zahle 50 €.", "action": "money", "value": -50},
+    {"text": "Steuerrückerstattung: 20 €.", "action": "money", "value": 20},
+    {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
+    {"text": "Versicherungsfälligkeit. Zahle 50 €.", "action": "money", "value": -50},
+    {"text": "Du hast gewonnen! Erhalte 10 €.", "action": "money", "value": 10},
+    {"text": "Bankirrtum zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
+    {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
+]
+
+
 # ── Datenklassen ─────────────────────────────────────────────────
 
 class Player:
@@ -35,13 +62,14 @@ class Player:
 class Field:
     def __init__(self, name: str, field_type: str, price: int = 0,
                  rent: list = None, color_group: str = "special",
-                 mortgage_value: int = 0):
+                 mortgage_value: int = 0, house_cost: int = 0):
         self.name = name
         self.field_type = field_type   # property, station, utility, tax, special, chance, community
         self.price = price
         self.rent = rent or [0]        # [base, 1h, 2h, 3h, 4h, hotel]
         self.color_group = color_group
         self.mortgage_value = mortgage_value
+        self.house_cost = house_cost   # Kosten pro Haus / Hotel
         self.owner: Optional[Player] = None
         self.houses = 0                # 0-4 Häuser, 5 = Hotel
         self.is_mortgaged = False
@@ -74,80 +102,60 @@ class Field:
             "houses": self.houses,
             "is_mortgaged": self.is_mortgaged,
             "mortgage_value": self.mortgage_value,
+            "house_cost": self.house_cost,
             "current_rent": self.rent[self.houses] if self.field_type == "property" and self.rent else 0,
         }
 
 
-# ── Chance / Gemeinschaftsfeld-Karten ───────────────────────────
-
-CHANCE_CARDS = [
-    {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
-    {"text": "Du erhältst ein Bankfehler zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
-    {"text": "Du hast eine Strafe erhalten. Zahle 100 €.", "action": "money", "value": -100},
-    {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
-    {"text": "Gehe zur nächsten Station.", "action": "next_station", "value": 0},
-    {"text": "Du gewinnst zweiten Preis in einem Schönheitswettbewerb. Erhalte 10 €.", "action": "money", "value": 10},
-    {"text": "Fälligkeit der Schulden. Zahle 50 €.", "action": "money", "value": -50},
-    {"text": "Kurreise nach Bad Homburg. Zahle 100 €.", "action": "money", "value": -100},
-    {"text": "Du wirst freigelassen! Freie Karte aus dem Gefängnis.", "action": "jail_card", "value": 0},
-    {"text": "Rücke 3 Felder zurück.", "action": "move", "value": -3},
-]
-
-COMMUNITY_CARDS = [
-    {"text": "Du erbst 100 €.", "action": "money", "value": 100},
-    {"text": "Arztkosten. Zahle 50 €.", "action": "money", "value": -50},
-    {"text": "Steuerrückerstattung: 20 €.", "action": "money", "value": 20},
-    {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
-    {"text": "Versicherungsfälligkeit. Zahle 50 €.", "action": "money", "value": -50},
-    {"text": "Du hast gewonnen! Erhalte 10 €.", "action": "money", "value": 10},
-    {"text": "Bankirrtum zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
-    {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
-]
-
-
 def _create_board() -> List[Field]:
-    """Erstellt ein Monopoly-Brett mit 40 Feldern (deutsche Version)."""
+    """Erstellt ein Monopoly-Brett mit 40 Feldern (deutsche Version) inkl. Hauspreisen."""
+    # Hauspreise pro Farbe
+    house_prices = {
+        "brown": 50, "lightblue": 50, "pink": 100, "orange": 100,
+        "red": 150, "yellow": 150, "green": 200, "darkblue": 200
+    }
+
     board = [
         Field("Los", "special"),                                               # 0
-        Field("Badstraße", "property", 60, [2, 10, 30, 90, 160, 250], "brown", 30),    # 1
+        Field("Badstraße", "property", 60, [2, 10, 30, 90, 160, 250], "brown", 30, house_prices["brown"]),    # 1
         Field("Gemeinschaft", "community"),                                    # 2
-        Field("Turmstraße", "property", 60, [4, 20, 60, 180, 320, 450], "brown", 30),  # 3
+        Field("Turmstraße", "property", 60, [4, 20, 60, 180, 320, 450], "brown", 30, house_prices["brown"]),  # 3
         Field("Einkommensteuer", "tax", 0, [200]),                             # 4
         Field("Südbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),        # 5
-        Field("Chausseestraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50),   # 6
+        Field("Chausseestraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50, house_prices["lightblue"]),   # 6
         Field("Chance", "chance"),                                             # 7
-        Field("Elisenstraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50),     # 8
-        Field("Poststraße", "property", 120, [8, 40, 100, 300, 450, 600], "lightblue", 60),      # 9
+        Field("Elisenstraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50, house_prices["lightblue"]),     # 8
+        Field("Poststraße", "property", 120, [8, 40, 100, 300, 450, 600], "lightblue", 60, house_prices["lightblue"]),      # 9
         Field("Gefängnis / Besuch", "special"),                                # 10
-        Field("Seestraße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70),           # 11
+        Field("Seestraße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70, house_prices["pink"]),           # 11
         Field("Elektrizitätswerk", "utility", 150, [0], "utility", 75),       # 12
-        Field("Christian Straße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70),         # 13
-        Field("Neuestraße", "property", 160, [12, 60, 180, 500, 700, 900], "pink", 80),          # 14
+        Field("Christian Straße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70, house_prices["pink"]),         # 13
+        Field("Neuestraße", "property", 160, [12, 60, 180, 500, 700, 900], "pink", 80, house_prices["pink"]),          # 14
         Field("Westbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 15
-        Field("Münchnerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90),    # 16
+        Field("Münchnerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90, house_prices["orange"]),    # 16
         Field("Gemeinschaft", "community"),                                    # 17
-        Field("Wienerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90),      # 18
-        Field("Berlinerstraße", "property", 200, [16, 80, 220, 600, 800, 1000], "orange", 100),  # 19
+        Field("Wienerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90, house_prices["orange"]),      # 18
+        Field("Berlinerstraße", "property", 200, [16, 80, 220, 600, 800, 1000], "orange", 100, house_prices["orange"]),  # 19
         Field("Frei Parken", "special"),                                       # 20
-        Field("Theaterstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110),      # 21
+        Field("Theaterstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110, house_prices["red"]),      # 21
         Field("Chance", "chance"),                                             # 22
-        Field("Museumsstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110),      # 23
-        Field("Opernplatz", "property", 240, [20, 100, 300, 750, 925, 1100], "red", 120),        # 24
+        Field("Museumsstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110, house_prices["red"]),      # 23
+        Field("Opernplatz", "property", 240, [20, 100, 300, 750, 925, 1100], "red", 120, house_prices["red"]),        # 24
         Field("Nordbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 25
-        Field("Lessingstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130),  # 26
-        Field("Schillerstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130), # 27
+        Field("Lessingstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130, house_prices["yellow"]),  # 26
+        Field("Schillerstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130, house_prices["yellow"]), # 27
         Field("Wasserwerk", "utility", 150, [0], "utility", 75),               # 28
-        Field("Goethestraße", "property", 280, [24, 120, 360, 850, 1025, 1200], "yellow", 140),  # 29
+        Field("Goethestraße", "property", 280, [24, 120, 360, 850, 1025, 1200], "yellow", 140, house_prices["yellow"]),  # 29
         Field("Gehe ins Gefängnis", "special"),                                # 30
-        Field("Rathausplatz", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150),   # 31
-        Field("Havelstraße", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150),    # 32
+        Field("Rathausplatz", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150, house_prices["green"]),   # 31
+        Field("Havelstraße", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150, house_prices["green"]),    # 32
         Field("Gemeinschaft", "community"),                                    # 33
-        Field("Potsdamer Platz", "property", 320, [28, 150, 450, 1000, 1200, 1400], "green", 160), # 34
+        Field("Potsdamer Platz", "property", 320, [28, 150, 450, 1000, 1200, 1400], "green", 160, house_prices["green"]), # 34
         Field("Hauptbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 35
         Field("Chance", "chance"),                                             # 36
-        Field("Parkstraße", "property", 350, [35, 175, 500, 1100, 1300, 1500], "darkblue", 175), # 37
+        Field("Parkstraße", "property", 350, [35, 175, 500, 1100, 1300, 1500], "darkblue", 175, house_prices["darkblue"]), # 37
         Field("Zusatzsteuer", "tax", 0, [100]),                                # 38
-        Field("Schlossallee", "property", 400, [50, 200, 600, 1400, 1700, 2000], "darkblue", 200), # 39
+        Field("Schlossallee", "property", 400, [50, 200, 600, 1400, 1700, 2000], "darkblue", 200, house_prices["darkblue"]), # 39
     ]
     return board
 
@@ -388,6 +396,59 @@ class Game:
         self.status_message = f"{player.username} kauft {field.name} für {field.price} €."
         return True
 
+    # ── Häuser / Hotel bauen ──
+
+    def build(self, property_name: str, build_type: str) -> dict:
+        """Baut ein Haus oder Hotel auf einer Straße. Gibt Erfolgsstatus zurück."""
+        player = self.players[self.current_player_index]
+        if self.turn_phase != "action":
+            return {"success": False, "error": "Du kannst jetzt nicht bauen."}
+        field = next((f for f in self.board if f.name == property_name), None)
+        if not field or field not in player.properties:
+            return {"success": False, "error": "Diese Straße gehört dir nicht."}
+        if field.field_type != "property":
+            return {"success": False, "error": "Nur Straßen können bebaut werden."}
+
+        # Alle Straßen dieser Farbe
+        group_fields = [f for f in self.board
+                        if f.color_group == field.color_group and f.field_type == "property"]
+
+        # Monopol & keine Hypothek
+        if not all(f.owner == player for f in group_fields):
+            return {"success": False, "error": "Du besitzt nicht alle Straßen dieser Farbe."}
+        if any(f.is_mortgaged for f in group_fields):
+            return {"success": False, "error": "Keine Straße der Farbe darf verpfändet sein."}
+
+        if build_type == "house":
+            if field.houses >= 4:
+                return {"success": False, "error": "Maximal 4 Häuser möglich."}
+            # Gleichmäßig bauen: nur auf den Straßen mit dem geringsten Wert
+            min_houses = min(f.houses for f in group_fields)
+            if field.houses > min_houses:
+                return {"success": False, "error": "Du musst gleichmäßig bauen."}
+            cost = field.house_cost
+            if player.money < cost:
+                return {"success": False, "error": "Nicht genug Geld."}
+            player.money -= cost
+            field.houses += 1
+            self.status_message = f"{player.username} baut ein Haus auf {field.name} ({cost} €)."
+            self.last_event = {"type": "build", "field": field.name, "houses": field.houses}
+
+        elif build_type == "hotel":
+            if field.houses != 4:
+                return {"success": False, "error": "Du benötigst genau 4 Häuser, um ein Hotel zu bauen."}
+            cost = field.house_cost
+            if player.money < cost:
+                return {"success": False, "error": "Nicht genug Geld."}
+            player.money -= cost
+            field.houses = 5  # 5 = Hotel
+            self.status_message = f"{player.username} baut ein Hotel auf {field.name} ({cost} €)."
+            self.last_event = {"type": "build", "field": field.name, "hotel": True}
+        else:
+            return {"success": False, "error": "Ungültige Bauaktion."}
+
+        return {"success": True, "game": self.to_dict()}
+
     # ── Rundenende ──
 
     def _next_player(self):
@@ -402,10 +463,59 @@ class Game:
 
     # ── Serialisierung ──
 
+    def _player_to_dict(self, player: Player) -> dict:
+        """Erweiterte Spielerdaten inkl. Bau-Informationen fürs Frontend."""
+        data = player.to_dict()
+        props_info = []
+        for field in player.properties:
+            if field.field_type == "property":
+                group_fields = [f for f in self.board
+                                if f.color_group == field.color_group and f.field_type == "property"]
+                min_houses = min(f.houses for f in group_fields)
+                # Kann ein Haus gebaut werden?
+                can_build_house = (
+                    field.houses < 4
+                    and not field.is_mortgaged
+                    and all(f.owner == player for f in group_fields)
+                    and all(not f.is_mortgaged for f in group_fields)
+                    and field.houses == min_houses
+                    and player.money >= field.house_cost
+                )
+                # Kann ein Hotel gebaut werden?
+                can_build_hotel = (
+                    field.houses == 4
+                    and not field.is_mortgaged
+                    and all(f.owner == player for f in group_fields)
+                    and all(not f.is_mortgaged for f in group_fields)
+                    and player.money >= field.house_cost
+                )
+                props_info.append({
+                    "name": field.name,
+                    "houses": field.houses,
+                    "color_group": field.color_group,
+                    "is_mortgaged": field.is_mortgaged,
+                    "house_cost": field.house_cost,
+                    "can_build_house": can_build_house,
+                    "can_build_hotel": can_build_hotel
+                })
+            else:
+                # Stationen/Werke ohne Bebauung
+                props_info.append({
+                    "name": field.name,
+                    "houses": 0,
+                    "color_group": field.color_group,
+                    "is_mortgaged": field.is_mortgaged,
+                    "house_cost": 0,
+                    "can_build_house": False,
+                    "can_build_hotel": False
+                })
+        data["properties"] = props_info
+        return data
+
     def to_dict(self) -> dict:
         current = self.players[self.current_player_index] if self.players else None
         return {
-            "players": [p.to_dict() for p in self.players],
+            "players": [self._player_to_dict(p) for p in self.players],
             "board": [f.to_dict() for f in self.board],
             "current_player": current.username if current else None,
             "current_player_color": current.color if current else None,
