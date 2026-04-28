@@ -22,17 +22,6 @@
             --warning: #e3b341;
             --radius: 8px;
             --radius-lg: 12px;
-
-            --brown: #795548;
-            --lightblue: #29b6f6;
-            --pink: #ec407a;
-            --orange: #ff7043;
-            --red: #ef5350;
-            --yellow: #ffd740;
-            --green: #66bb6a;
-            --darkblue: #1565c0;
-            --station: #78909c;
-            --utility: #ab47bc;
         }
 
         body {
@@ -49,6 +38,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         .header h1 {
             font-size: 22px;
@@ -56,6 +47,33 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .room-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(63, 185, 80, .1);
+            border: 1px solid rgba(63, 185, 80, .3);
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent2);
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        .room-badge .label {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--text2);
+            letter-spacing: 0;
+            margin-right: 2px;
         }
         .header a {
             color: var(--text2);
@@ -153,7 +171,6 @@
             border: 1px solid rgba(255,255,255,.3);
         }
 
-        /* Player tokens on board */
         .tokens-row {
             display: flex;
             flex-wrap: wrap;
@@ -171,10 +188,7 @@
         }
         .token.highlight { transform: scale(1.3); box-shadow: 0 0 6px currentColor; }
 
-        /* Center logo */
-        .center-logo {
-            text-align: center;
-        }
+        .center-logo { text-align: center; }
         .center-logo .title {
             font-size: 32px;
             font-weight: 800;
@@ -345,14 +359,6 @@
         .tooltip-row { display: flex; justify-content: space-between; gap: 12px; color: var(--text2); margin: 2px 0; }
         .tooltip-row span:last-child { color: var(--text); font-weight: 500; }
 
-        /* Color group indicator */
-        .color-dot {
-            display: inline-block;
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            margin-right: 4px;
-        }
-
         /* Join modal */
         .modal-overlay {
             display: none;
@@ -390,6 +396,46 @@
         .modal-actions { display: flex; gap: 8px; }
         .modal-actions .btn { flex: 1; margin-bottom: 0; }
 
+        /* Properties panel */
+        .prop-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .prop-row:last-child { border-bottom: none; }
+        .prop-name { flex: 1; font-weight: 500; }
+        .prop-houses { min-width: 60px; font-size: 14px; }
+        .build-btn {
+            font-size: 11px;
+            padding: 3px 8px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--bg3);
+            color: var(--accent2);
+            cursor: pointer;
+            transition: background .15s;
+            font-family: inherit;
+        }
+        .build-btn:hover:not(:disabled) { background: var(--bg); }
+        .build-btn:disabled { opacity: .3; cursor: default; }
+        .build-cost { color: var(--text2); font-size: 10px; margin-left: 2px; }
+
+        /* No room warning */
+        .no-room-warning {
+            background: rgba(248,81,73,.08);
+            border: 1px solid rgba(248,81,73,.3);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            font-size: 13px;
+            color: var(--danger);
+            text-align: center;
+            margin-bottom: 14px;
+        }
+        .no-room-warning a { color: var(--accent); }
+
         @media (max-width: 900px) {
             .game-layout { grid-template-columns: 1fr; }
             .sidebar { order: -1; }
@@ -400,8 +446,24 @@
 
 <div class="header">
     <h1>🎲 Monopoly</h1>
-    <a href="/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Dashboard</a>
+    <div class="header-right">
+        {% if room_code %}
+        <div class="room-badge">
+            <span class="label">Raum:</span>
+            {{ room_code }}
+        </div>
+        {% endif %}
+        <a href="/"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Dashboard</a>
+    </div>
 </div>
+
+{% if not room_code %}
+<div style="max-width:1200px;margin:0 auto;">
+    <div class="no-room-warning">
+        ⚠️ Du bist keinem Spielraum beigetreten. <a href="/">Gehe zum Dashboard</a>, um einen Raum zu erstellen oder beizutreten.
+    </div>
+</div>
+{% endif %}
 
 <div class="game-layout">
     <!-- ── SPIELBRETT ── -->
@@ -417,9 +479,9 @@
             <div class="panel-title">Spielstand</div>
             <div class="status-box" id="status-box">Lade Spiel...</div>
             <div class="dice-display" id="dice-display" style="display:none;">
-                <div class="die" id="die1">1</div>
+                <div class="die" id="die1">⚀</div>
                 <span style="color:var(--text2); font-weight:600;">+</span>
-                <div class="die" id="die2">1</div>
+                <div class="die" id="die2">⚀</div>
                 <span style="font-size:18px; color:var(--text); font-weight:700;" id="dice-sum">=2</span>
             </div>
         </div>
@@ -433,7 +495,8 @@
             <button class="btn" onclick="showJoinModal()">➕ Spiel beitreten</button>
             <button class="btn danger" onclick="resetGame()">🔄 Spiel zurücksetzen</button>
         </div>
-                <!-- direkt nach dem Aktions-Panel in der Sidebar einfügen -->
+
+        <!-- Meine Grundstücke -->
         <div class="panel" id="properties-panel" style="display:none;">
             <div class="panel-title">Meine Grundstücke</div>
             <div id="my-properties-list"></div>
@@ -497,27 +560,14 @@ function renderBoard(state) {
 
     const board = state.board;
 
-    // Positionen im 11×11-Grid:
-    // Reihe 10 (unten): Felder 0..10   → col 10..0, row 10
-    // Spalte 0 (links): Felder 11..20  → col 0, row 9..0
-    // Reihe 0 (oben):   Felder 21..30  → col 1..10, row 0
-    // Spalte 10 (rechts): Felder 31..39 → col 10, row 1..9
-
     const positions = [];
-    // Unten: Felder 0–10, von rechts nach links (col 10 bis 0)
     for (let i = 0; i <= 10; i++) positions.push({ fieldIdx: i, col: 10 - i, row: 10 });
-    // Links: Felder 11–19, von unten nach oben (row 9 bis 1)
     for (let i = 11; i <= 19; i++) positions.push({ fieldIdx: i, col: 0, row: 10 - (i - 10) });
-    // Links-Ecke oben: Feld 20
     positions.push({ fieldIdx: 20, col: 0, row: 0 });
-    // Oben: Felder 21–29, von links nach rechts (col 1 bis 9)
     for (let i = 21; i <= 29; i++) positions.push({ fieldIdx: i, col: i - 20, row: 0 });
-    // Rechts-Ecke oben: Feld 30
     positions.push({ fieldIdx: 30, col: 10, row: 0 });
-    // Rechts: Felder 31–39, von oben nach unten (row 1 bis 9)
     for (let i = 31; i <= 39; i++) positions.push({ fieldIdx: i, col: 10, row: i - 30 });
 
-    // Grid-Elemente erstellen (11×11 = 121, aber Center = 1 Element)
     const cells = {};
     positions.forEach(({ fieldIdx, col, row }) => {
         cells[`${row}-${col}`] = fieldIdx;
@@ -525,7 +575,7 @@ function renderBoard(state) {
 
     for (let row = 0; row <= 10; row++) {
         for (let col = 0; col <= 10; col++) {
-            if (row >= 1 && row <= 9 && col >= 1 && col <= 9) continue; // Center skip
+            if (row >= 1 && row <= 9 && col >= 1 && col <= 9) continue;
 
             const key = `${row}-${col}`;
             const fieldIdx = cells[key];
@@ -538,7 +588,6 @@ function renderBoard(state) {
             el.style.gridRow = row + 1;
             el.dataset.fieldIdx = fieldIdx;
 
-            // Farbbalken
             const color = COLOR_MAP[field.color_group] || "transparent";
             if (color !== "transparent") {
                 const bar = document.createElement("div");
@@ -547,13 +596,11 @@ function renderBoard(state) {
                 el.appendChild(bar);
             }
 
-            // Name
             const nameEl = document.createElement("div");
             nameEl.className = "field-name";
             nameEl.textContent = field.name;
             el.appendChild(nameEl);
 
-            // Preis
             if (field.price > 0) {
                 const priceEl = document.createElement("div");
                 priceEl.className = "field-price";
@@ -561,7 +608,6 @@ function renderBoard(state) {
                 el.appendChild(priceEl);
             }
 
-            // Besitzer-Badge
             if (field.owner_color) {
                 const badge = document.createElement("div");
                 badge.className = "field-owner-badge";
@@ -569,22 +615,28 @@ function renderBoard(state) {
                 el.appendChild(badge);
             }
 
-            // Spieler-Tokens
+            // Houses/hotel indicators
+            if (field.houses > 0) {
+                const houseEl = document.createElement("div");
+                houseEl.style.cssText = "font-size:6px;margin-top:1px;";
+                houseEl.textContent = field.houses === 5 ? "🏨" : "🏠".repeat(field.houses);
+                el.appendChild(houseEl);
+            }
+
             const tokensHere = state.players.filter(p => p.position === fieldIdx && !p.is_bankrupt);
             if (tokensHere.length) {
-                const row2 = document.createElement("div");
-                row2.className = "tokens-row";
+                const tokRow = document.createElement("div");
+                tokRow.className = "tokens-row";
                 tokensHere.forEach(p => {
                     const t = document.createElement("div");
                     t.className = "token" + (p.username === state.current_player ? " highlight" : "");
                     t.style.background = PLAYER_COLORS[p.color] || "#888";
                     t.title = p.username;
-                    row2.appendChild(t);
+                    tokRow.appendChild(t);
                 });
-                el.appendChild(row2);
+                el.appendChild(tokRow);
             }
 
-            // Tooltip
             el.addEventListener("mousemove", (e) => showTooltip(e, field, fieldIdx, state));
             el.addEventListener("mouseleave", hideTooltip);
 
@@ -592,7 +644,6 @@ function renderBoard(state) {
         }
     }
 
-    // Center-Bereich
     const center = document.createElement("div");
     center.className = "field center-area";
     center.style.gridColumn = "2 / 11";
@@ -615,6 +666,10 @@ function showTooltip(e, field, idx, state) {
     if (field.price > 0) {
         html += `<div class="tooltip-row"><span>Preis</span><span>${field.price} €</span></div>`;
         if (field.current_rent) html += `<div class="tooltip-row"><span>Miete</span><span>${field.current_rent} €</span></div>`;
+        if (field.houses > 0) {
+            const h = field.houses === 5 ? "🏨 Hotel" : `🏠 x${field.houses}`;
+            html += `<div class="tooltip-row"><span>Gebäude</span><span>${h}</span></div>`;
+        }
         if (field.owner) html += `<div class="tooltip-row"><span>Besitzer</span><span>${field.owner}</span></div>`;
         else html += `<div class="tooltip-row"><span>Status</span><span style="color:var(--accent2)">Kaufbar</span></div>`;
     } else {
@@ -637,7 +692,7 @@ function hideTooltip() {
 function renderPlayers(state) {
     const list = document.getElementById("players-list");
     list.innerHTML = "";
-    if (!state.players.length) {
+    if (!state.players || !state.players.length) {
         list.innerHTML = `<p style="color:var(--text2);font-size:13px;">Noch keine Spieler. Tritt dem Spiel bei!</p>`;
         return;
     }
@@ -646,20 +701,82 @@ function renderPlayers(state) {
         const initials = p.username.substring(0, 2).toUpperCase();
         const card = document.createElement("div");
         card.className = "player-card" + (isActive ? " active" : "") + (p.is_bankrupt ? " bankrupt" : "");
+        const propCount = Array.isArray(p.properties) ? p.properties.length : 0;
         card.innerHTML = `
             <div class="player-avatar" style="background:${PLAYER_COLORS[p.color]||'#888'};">${initials}</div>
             <div style="flex:1;min-width:0;">
                 <div class="player-name" style="display:flex;align-items:center;gap:4px;">
                     ${p.username}
                     ${p.username === currentUsername ? '<span style="font-size:10px;color:var(--text2);font-weight:400;">(Du)</span>' : ""}
-                    ${p.in_jail ? '<span style="font-size:10px;color:var(--danger);">⛓️ Gefängnis</span>' : ""}
+                    ${p.in_jail ? '<span style="font-size:10px;color:var(--danger);">⛓️</span>' : ""}
                 </div>
                 <div class="player-money">${p.money.toLocaleString("de-DE")} €</div>
-                <div class="player-props">${p.properties.length} Grundstück${p.properties.length !== 1 ? "e" : ""}</div>
+                <div class="player-props">${propCount} Grundstück${propCount !== 1 ? "e" : ""}</div>
             </div>
             ${isActive ? '<div class="turn-badge">AM ZUG</div>' : ""}
         `;
         list.appendChild(card);
+    });
+}
+
+// ── Eigene Grundstücke ───────────────────────────────────────
+
+function renderMyProperties(state) {
+    const panel = document.getElementById("properties-panel");
+    const list = document.getElementById("my-properties-list");
+
+    if (!state || !state.players) {
+        panel.style.display = "none";
+        return;
+    }
+
+    const me = state.players.find(p => p.username === currentUsername);
+
+    if (!me || !me.properties || me.properties.length === 0) {
+        panel.style.display = "none";
+        return;
+    }
+
+    panel.style.display = "block";
+    list.innerHTML = "";
+
+    me.properties.forEach(prop => {
+        const row = document.createElement("div");
+        row.className = "prop-row";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "prop-name";
+        nameSpan.textContent = prop.name;
+        row.appendChild(nameSpan);
+
+        const housesSpan = document.createElement("span");
+        housesSpan.className = "prop-houses";
+        if (prop.houses === 5) {
+            housesSpan.innerHTML = "🏨";
+        } else {
+            housesSpan.textContent = prop.houses > 0 ? "🏠".repeat(prop.houses) : "–";
+        }
+        row.appendChild(housesSpan);
+
+        if (prop.field_type === "property" || prop.house_cost > 0) {
+            const houseBtn = document.createElement("button");
+            houseBtn.className = "build-btn";
+            houseBtn.innerHTML = `+🏠 <span class="build-cost">${prop.house_cost}€</span>`;
+            houseBtn.disabled = !prop.can_build_house;
+            houseBtn.title = prop.can_build_house ? "Haus bauen" : "Bauen nicht möglich";
+            houseBtn.onclick = () => buildProperty(prop.name, "house");
+            row.appendChild(houseBtn);
+
+            const hotelBtn = document.createElement("button");
+            hotelBtn.className = "build-btn";
+            hotelBtn.innerHTML = `+🏨 <span class="build-cost">${prop.house_cost}€</span>`;
+            hotelBtn.disabled = !prop.can_build_hotel;
+            hotelBtn.title = prop.can_build_hotel ? "Hotel bauen" : "Braucht 4 Häuser";
+            hotelBtn.onclick = () => buildProperty(prop.name, "hotel");
+            row.appendChild(hotelBtn);
+        }
+
+        list.appendChild(row);
     });
 }
 
@@ -669,17 +786,12 @@ function updateButtons(state) {
     const isMyTurn = state.current_player === currentUsername;
     const phase = state.turn_phase;
 
-    const btnRoll = document.getElementById("btn-roll");
-    const btnBuy = document.getElementById("btn-buy");
-    const btnEnd = document.getElementById("btn-end");
-
-    btnRoll.disabled = !isMyTurn || phase !== "roll";
-    btnBuy.disabled = !isMyTurn || !state.can_buy;
-    btnEnd.disabled = !isMyTurn || phase === "roll";
+    document.getElementById("btn-roll").disabled = !isMyTurn || phase !== "roll";
+    document.getElementById("btn-buy").disabled = !isMyTurn || !state.can_buy;
+    document.getElementById("btn-end").disabled = !isMyTurn || phase === "roll";
 
     document.getElementById("status-box").textContent = state.status || "";
 
-    // Würfel
     const diceDiv = document.getElementById("dice-display");
     if (state.dice) {
         diceDiv.style.display = "flex";
@@ -689,6 +801,13 @@ function updateButtons(state) {
     } else {
         diceDiv.style.display = "none";
     }
+}
+
+function updateUI(state) {
+    renderBoard(state);
+    renderPlayers(state);
+    updateButtons(state);
+    renderMyProperties(state);
 }
 
 // ── Toast ────────────────────────────────────────────────────
@@ -702,10 +821,10 @@ function showToast(icon, text) {
     toastTimeout = setTimeout(() => toast.classList.remove("show"), 3500);
 }
 
-function handleEvent(event) {
+function handleEvent(event, statusText) {
     if (!event) return;
-    const icons = { jail: "⛓️", rent: "💸", card: "🃏", tax: "🏛️", bankrupt: "💀", land_empty: "🏷️" };
-    showToast(icons[event.type] || "📢", document.getElementById("status-box").textContent);
+    const icons = { jail: "⛓️", rent: "💸", card: "🃏", tax: "🏛️", bankrupt: "💀", land_empty: "🏷️", build: "🏗️" };
+    showToast(icons[event.type] || "📢", statusText || "");
 }
 
 // ── API-Calls ────────────────────────────────────────────────
@@ -717,18 +836,15 @@ async function fetchState(silent = false) {
         const newState = await res.json();
         const oldStatus = gameState?.status;
         gameState = newState;
-        renderBoard(gameState);
-        renderPlayers(gameState);
-        updateButtons(gameState);
+        updateUI(gameState);
         if (!silent && oldStatus !== gameState.status && gameState.last_event) {
-            handleEvent(gameState.last_event);
+            handleEvent(gameState.last_event, gameState.status);
         }
     } catch (e) { console.error(e); }
 }
 
 async function rollDice() {
     document.getElementById("btn-roll").disabled = true;
-    // Würfel-Animation
     const d1 = document.getElementById("die1");
     const d2 = document.getElementById("die2");
     document.getElementById("dice-display").style.display = "flex";
@@ -739,27 +855,46 @@ async function rollDice() {
     if (!res.ok) {
         const data = await res.json();
         showToast("❌", data.error || "Fehler beim Würfeln");
+        await fetchState(true);
         return;
     }
     gameState = await res.json();
-    renderBoard(gameState);
-    renderPlayers(gameState);
-    updateButtons(gameState);
-    if (gameState.last_event) handleEvent(gameState.last_event);
+    updateUI(gameState);
+    if (gameState.last_event) handleEvent(gameState.last_event, gameState.status);
 }
 
 async function buyProperty() {
+    document.getElementById("btn-buy").disabled = true;
     const res = await fetch("/api/game/buy", { method: "POST" });
+    if (!res.ok) {
+        showToast("❌", "Kauf nicht möglich");
+        await fetchState(true);
+        return;
+    }
     const data = await res.json();
-    if (data.success) {
-        gameState = data.game;
-        renderBoard(gameState);
-        renderPlayers(gameState);
-        updateButtons(gameState);
+    if (data.success !== false) {
+        gameState = data;
+        updateUI(gameState);
         showToast("🏠", gameState.status);
     } else {
         showToast("❌", "Kauf nicht möglich");
     }
+}
+
+async function buildProperty(propertyName, type) {
+    const res = await fetch("/api/game/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ property: propertyName, type: type })
+    });
+    if (!res.ok) {
+        const data = await res.json();
+        showToast("❌", data.error || "Bauen fehlgeschlagen");
+        return;
+    }
+    gameState = await res.json();
+    updateUI(gameState);
+    if (gameState.last_event) handleEvent(gameState.last_event, gameState.status);
 }
 
 async function endTurn() {
@@ -769,9 +904,7 @@ async function endTurn() {
         return;
     }
     gameState = await res.json();
-    renderBoard(gameState);
-    renderPlayers(gameState);
-    updateButtons(gameState);
+    updateUI(gameState);
 }
 
 async function joinGame() {
@@ -782,11 +915,9 @@ async function joinGame() {
     });
     const data = await res.json();
     hideJoinModal();
-    if (data.success) {
-        gameState = data.game;
-        renderBoard(gameState);
-        renderPlayers(gameState);
-        updateButtons(gameState);
+    if (res.ok) {
+        gameState = data;
+        updateUI(gameState);
         showToast("🎉", `Du bist dem Spiel als ${selectedColor} beigetreten!`);
     } else {
         showToast("❌", data.error || "Beitreten fehlgeschlagen");
@@ -796,7 +927,7 @@ async function joinGame() {
 async function resetGame() {
     if (!confirm("Spiel wirklich zurücksetzen?")) return;
     await fetch("/api/game/reset", { method: "POST" });
-    fetchState();
+    fetchState(true);
     showToast("🔄", "Spiel wurde zurückgesetzt");
 }
 
@@ -825,91 +956,10 @@ function hideJoinModal() {
     document.getElementById("join-modal").classList.remove("show");
 }
 
-// Klick außerhalb schließt Modal
 document.getElementById("join-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) hideJoinModal();
 });
-// –– Eigene Grundstücke anzeigen ––
-function renderMyProperties(state) {
-    const panel = document.getElementById("properties-panel");
-    const list = document.getElementById("my-properties-list");
-    const me = state.players.find(p => p.username === currentUsername);
 
-    // Nur zeigen, wenn ich an der Reihe bin und Grundstücke habe
-    if (!me || me.username !== state.current_player || !me.properties || me.properties.length === 0) {
-        panel.style.display = "none";
-        return;
-    }
-    panel.style.display = "block";
-    list.innerHTML = "";
-
-    me.properties.forEach(prop => {
-        const row = document.createElement("div");
-        row.className = "prop-row";
-
-        // Name
-        const nameSpan = document.createElement("span");
-        nameSpan.className = "prop-name";
-        nameSpan.textContent = prop.name;
-        row.appendChild(nameSpan);
-
-        // Häuser / Hotel
-        const housesSpan = document.createElement("span");
-        housesSpan.className = "prop-houses";
-        if (prop.houses === 5) {
-            housesSpan.innerHTML = "🏨 Hotel";
-        } else {
-            housesSpan.innerHTML = "🏠".repeat(prop.houses) || "0";
-        }
-        row.appendChild(housesSpan);
-
-        // Button Haus bauen
-        const houseBtn = document.createElement("button");
-        houseBtn.className = "build-btn";
-        houseBtn.innerHTML = `+🏠 <span class="build-cost">${prop.house_cost}€</span>`;
-        houseBtn.disabled = !prop.can_build_house;
-        houseBtn.title = prop.can_build_house ? "Haus bauen" : "Bauen nicht möglich";
-        houseBtn.onclick = () => buildProperty(prop.name, "house");
-        row.appendChild(houseBtn);
-
-        // Button Hotel bauen
-        const hotelBtn = document.createElement("button");
-        hotelBtn.className = "build-btn";
-        hotelBtn.innerHTML = `+🏨 <span class="build-cost">${prop.house_cost}€</span>`;
-        hotelBtn.disabled = !prop.can_build_hotel;
-        hotelBtn.title = prop.can_build_hotel ? "Hotel bauen" : "Hotel nicht möglich";
-        hotelBtn.onclick = () => buildProperty(prop.name, "hotel");
-        row.appendChild(hotelBtn);
-
-        list.appendChild(row);
-    });
-}
-
-// –– API-Call zum Bauen ––
-async function buildProperty(propertyName, type) {
-    const res = await fetch("/api/game/build", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ property: propertyName, type: type })
-    });
-    if (!res.ok) {
-        const data = await res.json();
-        showToast("❌", data.error || "Bauen fehlgeschlagen");
-        return;
-    }
-    const newState = await res.json();
-    gameState = newState;
-    renderBoard(gameState);
-    renderPlayers(gameState);
-    renderMyProperties(gameState);   // Panel sofort aktualisieren
-    updateButtons(gameState);
-    if (gameState.last_event) handleEvent(gameState.last_event);
-}
-
-// –– updateUI() so anpassen, dass renderMyProperties aufgerufen wird ––
-// (in der vorhandenen fetchState-Funktion oder im pollInterval-Callback)
-// Ergänze nach renderPlayers:
-renderMyProperties(gameState);
 // ── Init ─────────────────────────────────────────────────────
 
 fetchState(true);
