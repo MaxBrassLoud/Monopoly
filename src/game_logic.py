@@ -3,18 +3,16 @@ from dataclasses import dataclass, field
 from typing import Optional, List
 
 
-# ── Chance / Gemeinschaftsfeld-Karten ───────────────────────────
-
 CHANCE_CARDS = [
     {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
-    {"text": "Du erhältst ein Bankfehler zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
-    {"text": "Du hast eine Strafe erhalten. Zahle 100 €.", "action": "money", "value": -100},
+    {"text": "Bankfehler zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
+    {"text": "Strafe erhalten. Zahle 100 €.", "action": "money", "value": -100},
     {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
     {"text": "Gehe zur nächsten Station.", "action": "next_station", "value": 0},
-    {"text": "Du gewinnst zweiten Preis in einem Schönheitswettbewerb. Erhalte 10 €.", "action": "money", "value": 10},
-    {"text": "Fälligkeit der Schulden. Zahle 50 €.", "action": "money", "value": -50},
-    {"text": "Kurreise nach Bad Homburg. Zahle 100 €.", "action": "money", "value": -100},
-    {"text": "Du wirst freigelassen! Freie Karte aus dem Gefängnis.", "action": "jail_card", "value": 0},
+    {"text": "2. Preis im Schönheitswettbewerb. Erhalte 10 €.", "action": "money", "value": 10},
+    {"text": "Schulden fällig. Zahle 50 €.", "action": "money", "value": -50},
+    {"text": "Kurreise. Zahle 100 €.", "action": "money", "value": -100},
+    {"text": "Frei aus dem Gefängnis!", "action": "jail_card", "value": 0},
     {"text": "Rücke 3 Felder zurück.", "action": "move", "value": -3},
 ]
 
@@ -24,13 +22,11 @@ COMMUNITY_CARDS = [
     {"text": "Steuerrückerstattung: 20 €.", "action": "money", "value": 20},
     {"text": "Gehe zu Los. Erhalte 200 €.", "action": "goto", "value": 0},
     {"text": "Versicherungsfälligkeit. Zahle 50 €.", "action": "money", "value": -50},
-    {"text": "Du hast gewonnen! Erhalte 10 €.", "action": "money", "value": 10},
-    {"text": "Bankirrtum zu deinen Gunsten. Erhalte 200 €.", "action": "money", "value": 200},
+    {"text": "Gewinn! Erhalte 10 €.", "action": "money", "value": 10},
+    {"text": "Bankirrtum. Erhalte 200 €.", "action": "money", "value": 200},
     {"text": "Gehe ins Gefängnis.", "action": "jail", "value": 10},
 ]
 
-
-# ── Datenklassen ─────────────────────────────────────────────────
 
 class Player:
     def __init__(self, user_id: str, username: str, color: str):
@@ -60,18 +56,16 @@ class Player:
 
 
 class Field:
-    def __init__(self, name: str, field_type: str, price: int = 0,
-                 rent: list = None, color_group: str = "special",
-                 mortgage_value: int = 0, house_cost: int = 0):
+    def __init__(self, name, field_type, price=0, rent=None, color_group="special", mortgage_value=0, house_cost=0):
         self.name = name
-        self.field_type = field_type   # property, station, utility, tax, special, chance, community
+        self.field_type = field_type
         self.price = price
-        self.rent = rent or [0]        # [base, 1h, 2h, 3h, 4h, hotel]
+        self.rent = rent or [0]
         self.color_group = color_group
         self.mortgage_value = mortgage_value
-        self.house_cost = house_cost   # Kosten pro Haus / Hotel
+        self.house_cost = house_cost
         self.owner: Optional[Player] = None
-        self.houses = 0                # 0-4 Häuser, 5 = Hotel
+        self.houses = 0
         self.is_mortgaged = False
 
     def get_rent(self, board: list, owner: "Player") -> int:
@@ -81,10 +75,8 @@ class Field:
             owned = sum(1 for f in board if f.field_type == "station" and f.owner == owner)
             return 25 * (2 ** (owned - 1))
         if self.field_type == "utility":
-            owned = sum(1 for f in board if f.field_type == "utility" and f.owner == owner)
-            return None  # Miete wird mit Würfelwurf berechnet
+            return None
         if self.houses == 0:
-            # Wenn Spieler alle der Farbe besitzt: doppelte Grundmiete
             group_fields = [f for f in board if f.color_group == self.color_group and f.field_type == "property"]
             if all(f.owner == owner for f in group_fields):
                 return self.rent[0] * 2
@@ -108,59 +100,50 @@ class Field:
 
 
 def _create_board() -> List[Field]:
-    """Erstellt ein Monopoly-Brett mit 40 Feldern (deutsche Version) inkl. Hauspreisen."""
-    # Hauspreise pro Farbe
-    house_prices = {
-        "brown": 50, "lightblue": 50, "pink": 100, "orange": 100,
-        "red": 150, "yellow": 150, "green": 200, "darkblue": 200
-    }
-
-    board = [
-        Field("Los", "special"),                                               # 0
-        Field("Badstraße", "property", 60, [2, 10, 30, 90, 160, 250], "brown", 30, house_prices["brown"]),    # 1
-        Field("Gemeinschaft", "community"),                                    # 2
-        Field("Turmstraße", "property", 60, [4, 20, 60, 180, 320, 450], "brown", 30, house_prices["brown"]),  # 3
-        Field("Einkommensteuer", "tax", 0, [200]),                             # 4
-        Field("Südbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),        # 5
-        Field("Chausseestraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50, house_prices["lightblue"]),   # 6
-        Field("Chance", "chance"),                                             # 7
-        Field("Elisenstraße", "property", 100, [6, 30, 90, 270, 400, 550], "lightblue", 50, house_prices["lightblue"]),     # 8
-        Field("Poststraße", "property", 120, [8, 40, 100, 300, 450, 600], "lightblue", 60, house_prices["lightblue"]),      # 9
-        Field("Gefängnis / Besuch", "special"),                                # 10
-        Field("Seestraße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70, house_prices["pink"]),           # 11
-        Field("Elektrizitätswerk", "utility", 150, [0], "utility", 75),       # 12
-        Field("Christian Straße", "property", 140, [10, 50, 150, 450, 625, 750], "pink", 70, house_prices["pink"]),         # 13
-        Field("Neuestraße", "property", 160, [12, 60, 180, 500, 700, 900], "pink", 80, house_prices["pink"]),          # 14
-        Field("Westbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 15
-        Field("Münchnerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90, house_prices["orange"]),    # 16
-        Field("Gemeinschaft", "community"),                                    # 17
-        Field("Wienerstraße", "property", 180, [14, 70, 200, 550, 750, 950], "orange", 90, house_prices["orange"]),      # 18
-        Field("Berlinerstraße", "property", 200, [16, 80, 220, 600, 800, 1000], "orange", 100, house_prices["orange"]),  # 19
-        Field("Frei Parken", "special"),                                       # 20
-        Field("Theaterstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110, house_prices["red"]),      # 21
-        Field("Chance", "chance"),                                             # 22
-        Field("Museumsstraße", "property", 220, [18, 90, 250, 700, 875, 1050], "red", 110, house_prices["red"]),      # 23
-        Field("Opernplatz", "property", 240, [20, 100, 300, 750, 925, 1100], "red", 120, house_prices["red"]),        # 24
-        Field("Nordbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 25
-        Field("Lessingstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130, house_prices["yellow"]),  # 26
-        Field("Schillerstraße", "property", 260, [22, 110, 330, 800, 975, 1150], "yellow", 130, house_prices["yellow"]), # 27
-        Field("Wasserwerk", "utility", 150, [0], "utility", 75),               # 28
-        Field("Goethestraße", "property", 280, [24, 120, 360, 850, 1025, 1200], "yellow", 140, house_prices["yellow"]),  # 29
-        Field("Gehe ins Gefängnis", "special"),                                # 30
-        Field("Rathausplatz", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150, house_prices["green"]),   # 31
-        Field("Havelstraße", "property", 300, [26, 130, 390, 900, 1100, 1275], "green", 150, house_prices["green"]),    # 32
-        Field("Gemeinschaft", "community"),                                    # 33
-        Field("Potsdamer Platz", "property", 320, [28, 150, 450, 1000, 1200, 1400], "green", 160, house_prices["green"]), # 34
-        Field("Hauptbahnhof", "station", 200, [25, 50, 100, 200], "station", 100),                # 35
-        Field("Chance", "chance"),                                             # 36
-        Field("Parkstraße", "property", 350, [35, 175, 500, 1100, 1300, 1500], "darkblue", 175, house_prices["darkblue"]), # 37
-        Field("Zusatzsteuer", "tax", 0, [100]),                                # 38
-        Field("Schlossallee", "property", 400, [50, 200, 600, 1400, 1700, 2000], "darkblue", 200, house_prices["darkblue"]), # 39
+    hp = {"brown": 50, "lightblue": 50, "pink": 100, "orange": 100, "red": 150, "yellow": 150, "green": 200, "darkblue": 200}
+    return [
+        Field("Los", "special"),
+        Field("Badstraße", "property", 60, [2,10,30,90,160,250], "brown", 30, hp["brown"]),
+        Field("Gemeinschaft", "community"),
+        Field("Turmstraße", "property", 60, [4,20,60,180,320,450], "brown", 30, hp["brown"]),
+        Field("Einkommensteuer", "tax", 0, [200]),
+        Field("Südbahnhof", "station", 200, [25,50,100,200], "station", 100),
+        Field("Chausseestraße", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
+        Field("Chance", "chance"),
+        Field("Elisenstraße", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
+        Field("Poststraße", "property", 120, [8,40,100,300,450,600], "lightblue", 60, hp["lightblue"]),
+        Field("Gefängnis / Besuch", "special"),
+        Field("Seestraße", "property", 140, [10,50,150,450,625,750], "pink", 70, hp["pink"]),
+        Field("Elektrizitätswerk", "utility", 150, [0], "utility", 75),
+        Field("Christian Straße", "property", 140, [10,50,150,450,625,750], "pink", 70, hp["pink"]),
+        Field("Neuestraße", "property", 160, [12,60,180,500,700,900], "pink", 80, hp["pink"]),
+        Field("Westbahnhof", "station", 200, [25,50,100,200], "station", 100),
+        Field("Münchnerstraße", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
+        Field("Gemeinschaft", "community"),
+        Field("Wienerstraße", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
+        Field("Berlinerstraße", "property", 200, [16,80,220,600,800,1000], "orange", 100, hp["orange"]),
+        Field("Frei Parken", "special"),
+        Field("Theaterstraße", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
+        Field("Chance", "chance"),
+        Field("Museumsstraße", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
+        Field("Opernplatz", "property", 240, [20,100,300,750,925,1100], "red", 120, hp["red"]),
+        Field("Nordbahnhof", "station", 200, [25,50,100,200], "station", 100),
+        Field("Lessingstraße", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
+        Field("Schillerstraße", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
+        Field("Wasserwerk", "utility", 150, [0], "utility", 75),
+        Field("Goethestraße", "property", 280, [24,120,360,850,1025,1200], "yellow", 140, hp["yellow"]),
+        Field("Gehe ins Gefängnis", "special"),
+        Field("Rathausplatz", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
+        Field("Havelstraße", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
+        Field("Gemeinschaft", "community"),
+        Field("Potsdamer Platz", "property", 320, [28,150,450,1000,1200,1400], "green", 160, hp["green"]),
+        Field("Hauptbahnhof", "station", 200, [25,50,100,200], "station", 100),
+        Field("Chance", "chance"),
+        Field("Parkstraße", "property", 350, [35,175,500,1100,1300,1500], "darkblue", 175, hp["darkblue"]),
+        Field("Zusatzsteuer", "tax", 0, [100]),
+        Field("Schlossallee", "property", 400, [50,200,600,1400,1700,2000], "darkblue", 200, hp["darkblue"]),
     ]
-    return board
 
-
-# ── Spielklasse ──────────────────────────────────────────────────
 
 class Game:
     def __init__(self):
@@ -168,58 +151,69 @@ class Game:
         self.current_player_index = 0
         self.board = _create_board()
         self.dice_result: Optional[tuple] = None
-        self.status_message = "Warte auf Spieler..."
+        self.status_message = "Warte auf Spieler…"
         self.can_buy = False
         self.double_roll_count = 0
         self.chance_deck = CHANCE_CARDS.copy()
         self.community_deck = COMMUNITY_CARDS.copy()
         random.shuffle(self.chance_deck)
         random.shuffle(self.community_deck)
-        self.turn_phase = "roll"  # "roll" | "action" | "end"
-        self.last_event = None    # Für UI-Animationen
+        self.turn_phase = "roll"
+        self.last_event = None
 
-    # ── Spieler ──
+        # Rent confirmation
+        self.pending_rent: Optional[dict] = None      # awaiting payer confirmation
+        self.incoming_rent_offer: Optional[dict] = None  # creditor sees this
 
-    def add_player(self, user_id: str, username: str, color: str) -> bool:
+        # Trade
+        self.active_trade: Optional[dict] = None       # current open trade offer
+
+        # Frei Parken Topf
+        self.free_parking_pot: int = 0
+
+        # Chat
+        self.chat_messages: List[dict] = []
+
+    # ── Players ──────────────────────────────────────────────
+
+    def add_player(self, user_id, username, color) -> bool:
         if len(self.players) >= 6:
             return False
         if any(p.user_id == user_id for p in self.players):
             return False
         self.players.append(Player(user_id, username, color))
         self.status_message = f"{username} ist dem Spiel beigetreten!"
+        self._sys_chat(f"{username} ist dem Spiel beigetreten! 🎉")
         return True
 
-    # ── Würfeln ──
+    def _sys_chat(self, text: str):
+        self.chat_messages.append({"type": "system", "text": text})
 
-    def roll_dice(self) -> dict:
+    # ── Dice ─────────────────────────────────────────────────
+
+    def roll_dice(self):
         if self.turn_phase != "roll":
-            return {"error": "Noch nicht dran"}
-
+            return
         d1, d2 = random.randint(1, 6), random.randint(1, 6)
         self.dice_result = (d1, d2)
         player = self.players[self.current_player_index]
         is_double = d1 == d2
-
-        # Gefängnis-Logik
         if player.in_jail:
-            return self._handle_jail_roll(player, d1, d2, is_double)
-
-        # Drei Mal Pasch = Gefängnis
+            self._handle_jail_roll(player, d1, d2, is_double)
+            return
         if is_double:
             self.double_roll_count += 1
             if self.double_roll_count >= 3:
                 self._send_to_jail(player)
                 self.double_roll_count = 0
                 self.turn_phase = "end"
-                return {}
+                return
         else:
             self.double_roll_count = 0
-
         self._move_player(player, d1 + d2)
         self.turn_phase = "action" if not is_double else "roll"
-        return {}
 
-    def _handle_jail_roll(self, player: Player, d1: int, d2: int, is_double: bool) -> dict:
+    def _handle_jail_roll(self, player, d1, d2, is_double):
         if is_double:
             player.in_jail = False
             player.jail_turns = 0
@@ -232,142 +226,140 @@ class Game:
                 player.money -= 50
                 player.in_jail = False
                 player.jail_turns = 0
-                self.status_message = f"{player.username} zahlt 50 € Kaution und kommt frei."
+                self.status_message = f"{player.username} zahlt 50 € Kaution."
                 self._move_player(player, d1 + d2)
                 self.turn_phase = "action"
             else:
                 self.status_message = f"{player.username} bleibt im Gefängnis (Runde {player.jail_turns}/3)"
                 self.turn_phase = "end"
-        return {}
 
-    def _move_player(self, player: Player, steps: int):
+    def _move_player(self, player, steps):
         old_pos = player.position
         player.position = (player.position + steps) % 40
-
-        # Über Los
         if player.position < old_pos:
             player.money += 200
             self.status_message = f"{player.username} überquert Los und erhält 200 €!"
-
         self._handle_field(player)
 
-    def _handle_field(self, player: Player):
+    def _handle_field(self, player):
         field = self.board[player.position]
         d1, d2 = self.dice_result or (0, 0)
         self.can_buy = False
         self.last_event = None
 
-        # Gehe ins Gefängnis (Feld 30)
         if player.position == 30:
             self._send_to_jail(player)
             return
 
-        # Einkommensteuer (4) / Zusatzsteuer (38)
         if field.field_type == "tax":
             amount = field.rent[0]
             player.money -= amount
-            self.status_message = f"{player.username} zahlt {amount} € Steuer."
+            self.free_parking_pot += amount
+            self.status_message = f"{player.username} zahlt {amount} € Steuer. Topf: {self.free_parking_pot} €"
             self.last_event = {"type": "tax", "amount": amount}
             return
 
-        # Chance-Karte
         if field.field_type == "chance":
             card = self.chance_deck.pop(0)
             self.chance_deck.append(card)
             self._apply_card(player, card)
             return
 
-        # Gemeinschaftskarte
         if field.field_type == "community":
             card = self.community_deck.pop(0)
             self.community_deck.append(card)
             self._apply_card(player, card)
             return
 
-        # Kaufbare Felder
+        if player.position == 20:  # Frei Parken
+            pot = self.free_parking_pot
+            if pot > 0:
+                player.money += pot
+                self.free_parking_pot = 0
+                self.status_message = f"{player.username} landet auf Frei Parken und erhält {pot} € aus dem Topf!"
+                self.last_event = {"type": "free_parking", "amount": pot}
+                self._sys_chat(f"🅿️ {player.username} räumt den Topf ab: {pot} €!")
+            else:
+                self.status_message = f"{player.username} landet auf Frei Parken. (Topf ist leer)"
+            return
+
         if field.field_type in ("property", "station", "utility"):
             if field.owner is None and field.price > 0:
-                self.status_message = (
-                    f"{player.username} landet auf {field.name}. "
-                    f"Kaufpreis: {field.price} €."
-                )
+                self.status_message = f"{player.username} landet auf {field.name}. Kaufpreis: {field.price} €."
                 self.can_buy = player.money >= field.price
                 self.last_event = {"type": "land_empty", "field": field.name, "price": field.price}
 
             elif field.owner and field.owner != player and not field.is_mortgaged:
                 if field.field_type == "utility":
-                    rent = (d1 + d2) * (10 if sum(1 for f in self.board if f.field_type == "utility" and f.owner == field.owner) == 2 else 4)
+                    owned = sum(1 for f in self.board if f.field_type == "utility" and f.owner == field.owner)
+                    rent = (d1 + d2) * (10 if owned == 2 else 4)
                 else:
                     rent = field.get_rent(self.board, field.owner)
 
-                rent = min(rent, player.money)  # Nicht mehr als vorhanden
-                player.money -= rent
-                field.owner.money += rent
-                self.status_message = (
-                    f"{player.username} zahlt {rent} € Miete an {field.owner.username}."
-                )
+                # ── Rent confirmation: don't auto-deduct, set pending ──
+                rent = min(rent, player.money + sum(f.price for f in player.properties))
+                self.pending_rent = {
+                    "payer": player.username,
+                    "creditor": field.owner.username,
+                    "creditor_id": field.owner.user_id,
+                    "amount": rent,
+                    "field_name": field.name,
+                    "field_color": field.color_group,
+                }
+                self.status_message = f"{player.username} schuldet {rent} € Miete an {field.owner.username} ({field.name})."
                 self.last_event = {"type": "rent", "amount": rent, "to": field.owner.username}
-                self._check_bankruptcy(player)
-
+                self._sys_chat(f"💸 {player.username} schuldet {rent} € Miete an {field.owner.username}")
             else:
-                self.status_message = (
-                    f"{player.username} landet auf {field.name}."
-                    + (f" (Eigenes Grundstück)" if field.owner == player else "")
-                )
+                self.status_message = f"{player.username} landet auf {field.name}." + (" (Eigenes Grundstück)" if field.owner == player else "")
         else:
             self.status_message = f"{player.username} landet auf {field.name}."
 
-    def _apply_card(self, player: Player, card: dict):
+    def _apply_card(self, player, card):
         action = card["action"]
         value = card["value"]
         self.last_event = {"type": "card", "text": card["text"]}
-
         if action == "money":
             player.money += value
             self.status_message = f"Karte: {card['text']}"
             if value < 0:
+                self.free_parking_pot += abs(value)
                 self._check_bankruptcy(player)
-
         elif action == "goto":
-            old_pos = player.position
+            old = player.position
             player.position = value
-            if old_pos > value:
+            if old > value:
                 player.money += 200
             self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
-
         elif action == "jail":
             self._send_to_jail(player)
-            self.status_message = f"Karte: {card['text']}"
-
         elif action == "jail_card":
             player.get_out_of_jail_cards += 1
             self.status_message = f"Karte: {card['text']}"
-
         elif action == "move":
             player.position = max(0, player.position + value)
             self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
-
         elif action == "next_station":
-            pos = player.position
             stations = [5, 15, 25, 35]
-            next_st = next((s for s in stations if s > pos), stations[0])
-            if next_st < pos:
+            pos = player.position
+            nxt = next((s for s in stations if s > pos), stations[0])
+            if nxt < pos:
                 player.money += 200
-            player.position = next_st
+            player.position = nxt
             self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
 
-    def _send_to_jail(self, player: Player):
+    def _send_to_jail(self, player):
         player.position = 10
         player.in_jail = True
         player.jail_turns = 0
         self.double_roll_count = 0
         self.status_message = f"{player.username} geht ins Gefängnis!"
         self.last_event = {"type": "jail"}
+        self._sys_chat(f"⛓️ {player.username} wurde ins Gefängnis geschickt!")
 
-    def _check_bankruptcy(self, player: Player):
+    def _check_bankruptcy(self, player):
         if player.money < 0:
             player.is_bankrupt = True
             for prop in player.properties:
@@ -376,80 +368,360 @@ class Game:
             player.properties = []
             self.status_message += f" {player.username} ist bankrott!"
             self.last_event = {"type": "bankrupt", "player": player.username}
+            self._sys_chat(f"💀 {player.username} ist bankrott!")
 
-    # ── Kaufen ──
+    # ── Buy ──────────────────────────────────────────────────
 
     def buy_property(self) -> bool:
         player = self.players[self.current_player_index]
         field = self.board[player.position]
-
         if (field.field_type not in ("property", "station", "utility")
                 or field.owner is not None
                 or player.money < field.price
                 or field.price == 0):
             return False
-
         player.money -= field.price
         field.owner = player
         player.properties.append(field)
         self.can_buy = False
         self.status_message = f"{player.username} kauft {field.name} für {field.price} €."
+        self._sys_chat(f"🏠 {player.username} kauft {field.name} für {field.price} €")
         return True
 
-    # ── Häuser / Hotel bauen ──
+    # ── Build ────────────────────────────────────────────────
 
-    def build(self, property_name: str, build_type: str) -> dict:
-        """Baut ein Haus oder Hotel auf einer Straße. Gibt Erfolgsstatus zurück."""
+    def build(self, property_name, build_type) -> dict:
         player = self.players[self.current_player_index]
-        if self.turn_phase != "action":
-            return {"success": False, "error": "Du kannst jetzt nicht bauen."}
+        if self.turn_phase not in ("action", "roll"):
+            return {"success": False, "error": "Bauen nicht möglich."}
         field = next((f for f in self.board if f.name == property_name), None)
         if not field or field not in player.properties:
             return {"success": False, "error": "Diese Straße gehört dir nicht."}
         if field.field_type != "property":
             return {"success": False, "error": "Nur Straßen können bebaut werden."}
-
-        # Alle Straßen dieser Farbe
-        group_fields = [f for f in self.board
-                        if f.color_group == field.color_group and f.field_type == "property"]
-
-        # Monopol & keine Hypothek
-        if not all(f.owner == player for f in group_fields):
+        group = [f for f in self.board if f.color_group == field.color_group and f.field_type == "property"]
+        if not all(f.owner == player for f in group):
             return {"success": False, "error": "Du besitzt nicht alle Straßen dieser Farbe."}
-        if any(f.is_mortgaged for f in group_fields):
-            return {"success": False, "error": "Keine Straße der Farbe darf verpfändet sein."}
-
+        if any(f.is_mortgaged for f in group):
+            return {"success": False, "error": "Keine Straße darf verpfändet sein."}
         if build_type == "house":
             if field.houses >= 4:
                 return {"success": False, "error": "Maximal 4 Häuser möglich."}
-            # Gleichmäßig bauen: nur auf den Straßen mit dem geringsten Wert
-            min_houses = min(f.houses for f in group_fields)
-            if field.houses > min_houses:
+            min_h = min(f.houses for f in group)
+            if field.houses > min_h:
                 return {"success": False, "error": "Du musst gleichmäßig bauen."}
-            cost = field.house_cost
-            if player.money < cost:
+            if player.money < field.house_cost:
                 return {"success": False, "error": "Nicht genug Geld."}
-            player.money -= cost
+            player.money -= field.house_cost
             field.houses += 1
-            self.status_message = f"{player.username} baut ein Haus auf {field.name} ({cost} €)."
+            self.status_message = f"{player.username} baut Haus auf {field.name} ({field.house_cost} €)."
             self.last_event = {"type": "build", "field": field.name, "houses": field.houses}
-
         elif build_type == "hotel":
             if field.houses != 4:
-                return {"success": False, "error": "Du benötigst genau 4 Häuser, um ein Hotel zu bauen."}
-            cost = field.house_cost
-            if player.money < cost:
+                return {"success": False, "error": "4 Häuser erforderlich."}
+            if player.money < field.house_cost:
                 return {"success": False, "error": "Nicht genug Geld."}
-            player.money -= cost
-            field.houses = 5  # 5 = Hotel
-            self.status_message = f"{player.username} baut ein Hotel auf {field.name} ({cost} €)."
+            player.money -= field.house_cost
+            field.houses = 5
+            self.status_message = f"{player.username} baut Hotel auf {field.name} ({field.house_cost} €)."
             self.last_event = {"type": "build", "field": field.name, "hotel": True}
         else:
             return {"success": False, "error": "Ungültige Bauaktion."}
+        return {"success": True}
 
-        return {"success": True, "game": self.to_dict()}
+    def sell_building(self, property_name: str, sell_type: str, username: str) -> dict:
+        """Verkauft ein Haus oder Hotel zum Originalpreis."""
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        field = next((f for f in self.board if f.name == property_name), None)
+        if not field or field not in player.properties:
+            return {"success": False, "error": "Dieses Grundstück gehört dir nicht."}
+        if field.field_type != "property":
+            return {"success": False, "error": "Nur Straßen haben Gebäude."}
+        group = [f for f in self.board if f.color_group == field.color_group and f.field_type == "property"]
 
-    # ── Rundenende ──
+        if sell_type == "hotel":
+            if field.houses != 5:
+                return {"success": False, "error": "Kein Hotel vorhanden."}
+            field.houses = 4
+            player.money += field.house_cost
+            self.status_message = f"{username} verkauft Hotel auf {field.name} (+{field.house_cost} €)."
+            self.last_event = {"type": "sell_building", "field": field.name, "hotel": True}
+            self._sys_chat(f"🔨 {username} verkauft Hotel auf {field.name} für {field.house_cost} €")
+
+        elif sell_type == "house":
+            if field.houses == 0:
+                return {"success": False, "error": "Keine Häuser vorhanden."}
+            if field.houses == 5:
+                return {"success": False, "error": "Zuerst Hotel verkaufen."}
+            max_h = max(f.houses for f in group)
+            if field.houses < max_h:
+                return {"success": False, "error": "Gleichmäßig abreißen – zuerst Straßen mit mehr Häusern."}
+            field.houses -= 1
+            player.money += field.house_cost
+            self.status_message = f"{username} verkauft Haus auf {field.name} (+{field.house_cost} €)."
+            self.last_event = {"type": "sell_building", "field": field.name, "houses": field.houses}
+            self._sys_chat(f"🔨 {username} verkauft Haus auf {field.name} für {field.house_cost} €")
+        else:
+            return {"success": False, "error": "Ungültige Aktion."}
+        return {"success": True}
+
+    # ── Rent Confirmation ────────────────────────────────────
+
+    def confirm_rent_payment(self, payer_username: str) -> dict:
+        if not self.pending_rent:
+            return {"success": False, "error": "Keine ausstehende Miete."}
+        rent = self.pending_rent
+        if rent["payer"] != payer_username:
+            return {"success": False, "error": "Du bist nicht der Schuldner."}
+        payer = next((p for p in self.players if p.username == payer_username), None)
+        creditor = next((p for p in self.players if p.username == rent["creditor"]), None)
+        if not payer or not creditor:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        amount = min(rent["amount"], payer.money)
+        payer.money -= amount
+        creditor.money += amount
+        self.status_message = f"{payer_username} zahlt {amount} € Miete an {creditor.username}."
+        self._sys_chat(f"💸 {payer_username} hat {amount} € Miete an {creditor.username} gezahlt")
+        self.pending_rent = None
+        self._check_bankruptcy(payer)
+        return {"success": True}
+
+    def offer_property_for_rent(self, payer_username: str, prop_name: str) -> dict:
+        if not self.pending_rent:
+            return {"success": False, "error": "Keine ausstehende Miete."}
+        rent = self.pending_rent
+        if rent["payer"] != payer_username:
+            return {"success": False, "error": "Du bist nicht der Schuldner."}
+        payer = next((p for p in self.players if p.username == payer_username), None)
+        prop = next((f for f in payer.properties if f.name == prop_name), None) if payer else None
+        if not prop:
+            return {"success": False, "error": "Grundstück nicht gefunden."}
+        self.incoming_rent_offer = {
+            "from": payer_username,
+            "to": rent["creditor"],
+            "prop_name": prop_name,
+            "prop_color": prop.color_group,
+            "prop_value": prop.price,
+            "rent_amount": rent["amount"],
+        }
+        self.status_message = f"{payer_username} bietet '{prop_name}' statt Miete an."
+        return {"success": True}
+
+    def respond_rent_offer(self, creditor_username: str, accept: bool) -> dict:
+        if not self.incoming_rent_offer:
+            return {"success": False, "error": "Kein Angebot vorhanden."}
+        offer = self.incoming_rent_offer
+        if offer["to"] != creditor_username:
+            return {"success": False, "error": "Du bist nicht der Empfänger."}
+        payer = next((p for p in self.players if p.username == offer["from"]), None)
+        creditor = next((p for p in self.players if p.username == creditor_username), None)
+        self.incoming_rent_offer = None
+        self.pending_rent = None
+        if accept:
+            prop = next((f for f in payer.properties if f.name == offer["prop_name"]), None)
+            if prop and payer and creditor:
+                payer.properties.remove(prop)
+                prop.owner = creditor
+                creditor.properties.append(prop)
+                self.status_message = f"{creditor_username} erhält '{prop.name}' statt Miete."
+                self._sys_chat(f"🤝 {creditor_username} akzeptiert '{prop.name}' statt Miete von {payer.username}")
+        else:
+            self.status_message = f"{creditor_username} lehnt das Grundstücksangebot ab. Miete muss gezahlt werden."
+            # Re-set pending rent so payer must pay cash
+            self.pending_rent = {
+                "payer": offer["from"],
+                "creditor": creditor_username,
+                "amount": offer["rent_amount"],
+                "field_name": "",
+            }
+        return {"success": True}
+
+    # ── Trade ─────────────────────────────────────────────────
+
+    def send_trade(self, from_user, to_user, my_props, my_money, their_props, their_money) -> dict:
+        sender = next((p for p in self.players if p.username == from_user), None)
+        receiver = next((p for p in self.players if p.username == to_user), None)
+        if not sender or not receiver:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        if self.active_trade:
+            return {"success": False, "error": "Es läuft bereits ein Handel."}
+        # Validate that sender owns the props they offer
+        for pn in my_props:
+            if not any(f.name == pn for f in sender.properties):
+                return {"success": False, "error": f"Du besitzt '{pn}' nicht."}
+        # Validate receiver owns the props being requested
+        for pn in their_props:
+            if not any(f.name == pn for f in receiver.properties):
+                return {"success": False, "error": f"{to_user} besitzt '{pn}' nicht."}
+        if my_money < 0 or their_money < 0:
+            return {"success": False, "error": "Negativer Geldbetrag nicht möglich."}
+        if sender.money < my_money:
+            return {"success": False, "error": "Nicht genug Geld."}
+
+        self.active_trade = {
+            "from": from_user,
+            "to": to_user,
+            "my_props": my_props,      # what sender offers
+            "my_money": my_money,
+            "their_props": their_props,  # what sender requests from receiver
+            "their_money": their_money,
+            "history": [{"by": from_user, "action": f"Angebot gesendet: {len(my_props)} Grundstück(e) + {my_money}€ gegen {len(their_props)} Grundstück(e) + {their_money}€"}],
+        }
+        self._sys_chat(f"🤝 {from_user} möchte mit {to_user} handeln")
+        return {"success": True}
+
+    def respond_trade(self, responder: str, action: str, counter: Optional[dict] = None) -> dict:
+        trade = self.active_trade
+        if not trade:
+            return {"success": False, "error": "Kein aktiver Handel."}
+        if responder != trade["to"]:
+            return {"success": False, "error": "Du bist nicht der Empfänger."}
+
+        if action == "reject":
+            self.active_trade = None
+            self.status_message = f"{responder} hat den Handel abgelehnt."
+            self._sys_chat(f"❌ {responder} hat den Handel abgelehnt")
+            return {"success": True}
+
+        if action == "accept":
+            return self._execute_trade(trade)
+
+        if action == "counter":
+            if not counter:
+                return {"success": False, "error": "Kein Gegenangebot angegeben."}
+            # Swap perspective for counter: now responder is the "from"
+            new_trade = {
+                "from": responder,
+                "to": trade["from"],
+                "my_props": counter.get("my_props", []),
+                "my_money": counter.get("my_money", 0),
+                "their_props": counter.get("their_props", []),
+                "their_money": counter.get("their_money", 0),
+                "history": trade["history"] + [{"by": responder, "action": f"Gegenangebot: {len(counter.get('my_props',[]))} Grundstück(e) + {counter.get('my_money',0)}€ gegen {len(counter.get('their_props',[]))} Grundstück(e) + {counter.get('their_money',0)}€"}],
+            }
+            # Validate counter
+            sender = next((p for p in self.players if p.username == responder), None)
+            orig_sender = next((p for p in self.players if p.username == trade["from"]), None)
+            if sender and orig_sender:
+                for pn in counter.get("my_props", []):
+                    if not any(f.name == pn for f in sender.properties):
+                        return {"success": False, "error": f"Du besitzt '{pn}' nicht."}
+                for pn in counter.get("their_props", []):
+                    if not any(f.name == pn for f in orig_sender.properties):
+                        return {"success": False, "error": f"{trade['from']} besitzt dieses Grundstück nicht."}
+            self.active_trade = new_trade
+            self._sys_chat(f"↩ {responder} hat ein Gegenangebot an {trade['from']} gesendet")
+            return {"success": True}
+
+        return {"success": False, "error": "Ungültige Aktion."}
+
+    def _execute_trade(self, trade: dict) -> dict:
+        sender = next((p for p in self.players if p.username == trade["from"]), None)
+        receiver = next((p for p in self.players if p.username == trade["to"]), None)
+        if not sender or not receiver:
+            self.active_trade = None
+            return {"success": False, "error": "Spieler nicht gefunden."}
+
+        # Transfer properties from sender to receiver
+        for pn in trade["my_props"]:
+            prop = next((f for f in self.board if f.name == pn), None)
+            if prop and prop in sender.properties:
+                sender.properties.remove(prop)
+                prop.owner = receiver
+                receiver.properties.append(prop)
+
+        # Transfer properties from receiver to sender
+        for pn in trade["their_props"]:
+            prop = next((f for f in self.board if f.name == pn), None)
+            if prop and prop in receiver.properties:
+                receiver.properties.remove(prop)
+                prop.owner = sender
+                sender.properties.append(prop)
+
+        # Transfer money
+        if trade["my_money"] > 0:
+            actual = min(trade["my_money"], sender.money)
+            sender.money -= actual
+            receiver.money += actual
+
+        if trade["their_money"] > 0:
+            actual = min(trade["their_money"], receiver.money)
+            receiver.money -= actual
+            sender.money += actual
+
+        self.active_trade = None
+        self.status_message = f"Handel zwischen {sender.username} und {receiver.username} abgeschlossen!"
+        self._sys_chat(f"✅ Handel zwischen {sender.username} und {receiver.username} erfolgreich abgeschlossen!")
+        self.last_event = {"type": "trade", "a": sender.username, "b": receiver.username}
+        return {"success": True}
+
+
+    # ── Mortgage ─────────────────────────────────────────────
+
+    def take_mortgage(self, property_name: str, username: str) -> dict:
+        """Nimmt eine Hypothek auf ein Grundstück auf (50% des Kaufpreises)."""
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        field = next((f for f in self.board if f.name == property_name), None)
+        if not field or field not in player.properties:
+            return {"success": False, "error": "Dieses Grundstück gehört dir nicht."}
+        if field.is_mortgaged:
+            return {"success": False, "error": "Bereits verpfändet."}
+        if field.houses > 0:
+            return {"success": False, "error": "Erst alle Häuser/Hotels verkaufen."}
+        mortgage_val = field.price // 2
+        field.is_mortgaged = True
+        player.money += mortgage_val
+        self.status_message = f"{username} verpfändet {field.name} für {mortgage_val} €."
+        self.last_event = {"type": "mortgage", "field": field.name, "amount": mortgage_val}
+        self._sys_chat(f"🏦 {username} nimmt Hypothek auf {field.name}: +{mortgage_val} €")
+        return {"success": True}
+
+    def lift_mortgage(self, property_name: str, username: str) -> dict:
+        """Löst eine Hypothek ab (Rückzahlung + 10% Zins)."""
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        field = next((f for f in self.board if f.name == property_name), None)
+        if not field or field not in player.properties:
+            return {"success": False, "error": "Dieses Grundstück gehört dir nicht."}
+        if not field.is_mortgaged:
+            return {"success": False, "error": "Keine Hypothek vorhanden."}
+        mortgage_val = field.price // 2
+        repay = int(mortgage_val * 1.1)  # +10% Zinsen
+        if player.money < repay:
+            return {"success": False, "error": f"Nicht genug Geld. Rückzahlung: {repay} €"}
+        field.is_mortgaged = False
+        player.money -= repay
+        self.status_message = f"{username} löst Hypothek auf {field.name} ab ({repay} €)."
+        self.last_event = {"type": "unmortgage", "field": field.name, "amount": repay}
+        self._sys_chat(f"✅ {username} löst Hypothek auf {field.name} ab: -{repay} €")
+        return {"success": True}
+
+    # ── Jail Buyout ──────────────────────────────────────────
+
+    def buy_out_of_jail(self, username: str) -> dict:
+        """Spieler kauft sich für 50 € aus dem Gefängnis frei."""
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        if not player.in_jail:
+            return {"success": False, "error": "Du bist nicht im Gefängnis."}
+        if player.money < 50:
+            return {"success": False, "error": "Nicht genug Geld (50 € Kaution)."}
+        player.money -= 50
+        self.free_parking_pot += 50  # Kaution geht in den Topf
+        player.in_jail = False
+        player.jail_turns = 0
+        self.status_message = f"{username} zahlt 50 € Kaution und kommt frei!"
+        self.last_event = {"type": "jail_buyout"}
+        self._sys_chat(f"🔓 {username} hat sich für 50 € aus dem Gefängnis freigekauft")
+        return {"success": True}
+
+    # ── Turn ─────────────────────────────────────────────────
 
     def _next_player(self):
         active = [p for p in self.players if not p.is_bankrupt]
@@ -461,53 +733,51 @@ class Game:
             idx = (idx + 1) % len(self.players)
         self.current_player_index = idx
 
-    # ── Serialisierung ──
+    # ── Serialise ────────────────────────────────────────────
 
     def _player_to_dict(self, player: Player) -> dict:
-        """Erweiterte Spielerdaten inkl. Bau-Informationen fürs Frontend."""
         data = player.to_dict()
         props_info = []
         for field in player.properties:
             if field.field_type == "property":
-                group_fields = [f for f in self.board
-                                if f.color_group == field.color_group and f.field_type == "property"]
-                min_houses = min(f.houses for f in group_fields)
-                # Kann ein Haus gebaut werden?
-                can_build_house = (
-                    field.houses < 4
-                    and not field.is_mortgaged
-                    and all(f.owner == player for f in group_fields)
-                    and all(not f.is_mortgaged for f in group_fields)
-                    and field.houses == min_houses
-                    and player.money >= field.house_cost
-                )
-                # Kann ein Hotel gebaut werden?
-                can_build_hotel = (
-                    field.houses == 4
-                    and not field.is_mortgaged
-                    and all(f.owner == player for f in group_fields)
-                    and all(not f.is_mortgaged for f in group_fields)
-                    and player.money >= field.house_cost
-                )
+                group = [f for f in self.board if f.color_group == field.color_group and f.field_type == "property"]
+                min_h = min(f.houses for f in group)
+                can_house = (field.houses < 4 and not field.is_mortgaged
+                             and all(f.owner == player for f in group)
+                             and all(not f.is_mortgaged for f in group)
+                             and field.houses == min_h and player.money >= field.house_cost)
+                can_hotel = (field.houses == 4 and not field.is_mortgaged
+                             and all(f.owner == player for f in group)
+                             and all(not f.is_mortgaged for f in group)
+                             and player.money >= field.house_cost)
+                max_h = max(f.houses for f in group)
+                can_sell_house = (0 < field.houses < 5 and field.houses == max_h)
+                can_sell_hotel = (field.houses == 5)
+                mortgage_val = field.price // 2
+                repay_val = int(mortgage_val * 1.1)
+                can_mortgage = (not field.is_mortgaged and field.houses == 0)
+                can_unmortgage = (field.is_mortgaged and player.money >= repay_val)
                 props_info.append({
-                    "name": field.name,
-                    "houses": field.houses,
-                    "color_group": field.color_group,
-                    "is_mortgaged": field.is_mortgaged,
-                    "house_cost": field.house_cost,
-                    "can_build_house": can_build_house,
-                    "can_build_hotel": can_build_hotel
+                    "name": field.name, "houses": field.houses, "color_group": field.color_group,
+                    "is_mortgaged": field.is_mortgaged, "house_cost": field.house_cost,
+                    "price": field.price,
+                    "mortgage_value": mortgage_val, "repay_value": repay_val,
+                    "can_build_house": can_house, "can_build_hotel": can_hotel,
+                    "can_sell_house": can_sell_house, "can_sell_hotel": can_sell_hotel,
+                    "can_mortgage": can_mortgage, "can_unmortgage": can_unmortgage
                 })
             else:
-                # Stationen/Werke ohne Bebauung
+                mortgage_val2 = field.price // 2
+                repay_val2 = int(mortgage_val2 * 1.1)
                 props_info.append({
-                    "name": field.name,
-                    "houses": 0,
-                    "color_group": field.color_group,
-                    "is_mortgaged": field.is_mortgaged,
-                    "house_cost": 0,
-                    "can_build_house": False,
-                    "can_build_hotel": False
+                    "name": field.name, "houses": 0, "color_group": field.color_group,
+                    "is_mortgaged": field.is_mortgaged, "house_cost": 0,
+                    "price": field.price,
+                    "mortgage_value": mortgage_val2, "repay_value": repay_val2,
+                    "can_build_house": False, "can_build_hotel": False,
+                    "can_sell_house": False, "can_sell_hotel": False,
+                    "can_mortgage": not field.is_mortgaged,
+                    "can_unmortgage": field.is_mortgaged and player.money >= repay_val2
                 })
         data["properties"] = props_info
         return data
@@ -524,8 +794,12 @@ class Game:
             "can_buy": self.can_buy,
             "turn_phase": self.turn_phase,
             "last_event": self.last_event,
+            "pending_rent": self.pending_rent,
+            "incoming_rent_offer": self.incoming_rent_offer,
+            "incoming_trade": self.active_trade,
+            "free_parking_pot": self.free_parking_pot,
+            "chat_messages": self.chat_messages[-80:],  # last 80 messages
         }
 
 
-# Globale Spielverwaltung (mehrere Spielräume möglich)
 active_games: dict[str, Game] = {}
