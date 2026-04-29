@@ -1255,6 +1255,28 @@ async function buyOutOfJail() {
     toast("🔓", GS.status);
 }
 
+async function takeMortgage(name) {
+    const res = await fetch("/api/game/mortgage", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ property: name, action: "take" })
+    });
+    if (!res.ok) { const d = await res.json(); toast("❌", d.error || "Fehler"); return; }
+    GS = await res.json(); updateUI(GS);
+    toast("🏦", GS.status);
+}
+
+async function liftMortgage(name) {
+    const res = await fetch("/api/game/mortgage", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ property: name, action: "lift" })
+    });
+    if (!res.ok) { const d = await res.json(); toast("❌", d.error || "Fehler"); return; }
+    GS = await res.json(); updateUI(GS);
+    toast("✅", GS.status);
+}
+
 async function sellProp(name, type) {
     const label = type==="hotel" ? "Hotel" : "Haus";
     if(!confirm(`${label} auf "${name}" verkaufen und ${type==="hotel"?"Hotel":"Haus"}kosten zurückerhalten?`)) return;
