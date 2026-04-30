@@ -311,6 +311,30 @@ def mortgage():
     return jsonify(game.to_dict())
 
 
+@app.route('/api/game/confirm_card', methods=['POST'])
+@login_required
+def confirm_card():
+    game, _ = get_current_game()
+    if not game:
+        return jsonify({"error": "Kein Raum"}), 400
+    result = game.confirm_card(session["username"])
+    if not result.get("success"):
+        return jsonify({"error": result.get("error", "Fehler")}), 400
+    return jsonify(game.to_dict())
+
+
+@app.route('/api/game/use_jail_card', methods=['POST'])
+@login_required
+def use_jail_card():
+    game, _ = get_current_game()
+    if not game:
+        return jsonify({"error": "Kein Raum"}), 400
+    result = game.use_jail_card(session["username"])
+    if not result.get("success"):
+        return jsonify({"error": result.get("error", "Fehler")}), 400
+    return jsonify(game.to_dict())
+
+
 @app.route('/api/game/buy_out_of_jail', methods=['POST'])
 @login_required
 def buy_out_of_jail():

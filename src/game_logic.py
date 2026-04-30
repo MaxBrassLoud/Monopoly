@@ -171,6 +171,9 @@ class Game:
         # Frei Parken Topf
         self.free_parking_pot: int = 0
 
+        # Karten-Popup (muss vom Spieler bestätigt werden)
+        self.pending_card: Optional[dict] = None  # {player, card_type, text, action, value}
+
         # Chat
         self.chat_messages: List[dict] = []
 
@@ -314,13 +317,43 @@ class Game:
         else:
             self.status_message = f"{player.username} landet auf {field.name}."
 
-    def _apply_card(self, player, card):
-        action = card["action"]
-        value = card["value"]
+    def _apply_card(self, player: "Player", card: dict):
+        """Speichert die Karte als Popup — Spieler bestätigt via confirm_card()."""
         self.last_event = {"type": "card", "text": card["text"]}
+        self.status_message = f"{player.username} zieht eine Karte…"
+        # Determine card type by checking which deck it came from (community vs chance)
+        # We tag it during draw; use field position as proxy
+        field = self.board[player.position]
+        card_type = "community" if field.field_type == "community" else "chance"
+        self.pending_card = {
+            "player": player.username,
+            "card_type": card_type,
+            "text": card["text"],
+            "action": card["action"],
+            "value": card["value"],
+        }
+
+    def confirm_card(self, username: str) -> dict:
+        """Bestätigt die angezeigte Karte und führt die Aktion aus."""
+        if not self.pending_card:
+            return {"success": False, "error": "Keine Karte ausstehend."}
+        if self.pending_card["player"] != username:
+            return {"success": False, "error": "Nicht deine Karte."}
+        card = self.pending_card
+        self.pending_card = None
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        self._execute_card(player, card)
+        return {"success": True}
+
+    def _execute_card(self, player: "Player", card: dict):
+        """Führt die Kartenaktion tatsächlich aus."""
+        action = card["action"]
+        value  = card["value"]
+        self.status_message = f"Karte: {card['text']}"
         if action == "money":
             player.money += value
-            self.status_message = f"Karte: {card['text']}"
             if value < 0:
                 self.free_parking_pot += abs(value)
                 self._check_bankruptcy(player)
@@ -329,16 +362,14 @@ class Game:
             player.position = value
             if old > value:
                 player.money += 200
-            self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
         elif action == "jail":
             self._send_to_jail(player)
         elif action == "jail_card":
             player.get_out_of_jail_cards += 1
-            self.status_message = f"Karte: {card['text']}"
+            self._sys_chat(f"🃏 {player.username} erhält eine Gefängnisfreikarte!")
         elif action == "move":
             player.position = max(0, player.position + value)
-            self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
         elif action == "next_station":
             stations = [5, 15, 25, 35]
@@ -347,7 +378,6 @@ class Game:
             if nxt < pos:
                 player.money += 200
             player.position = nxt
-            self.status_message = f"Karte: {card['text']}"
             self._handle_field(player)
 
     def _send_to_jail(self, player):
@@ -701,6 +731,25 @@ class Game:
         self._sys_chat(f"✅ {username} löst Hypothek auf {field.name} ab: -{repay} €")
         return {"success": True}
 
+    # ── Jail Card ────────────────────────────────────────────
+
+    def use_jail_card(self, username: str) -> dict:
+        """Nutzt eine Gefängnisfreikarte."""
+        player = next((p for p in self.players if p.username == username), None)
+        if not player:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        if not player.in_jail:
+            return {"success": False, "error": "Du bist nicht im Gefängnis."}
+        if player.get_out_of_jail_cards < 1:
+            return {"success": False, "error": "Keine Gefängnisfreikarte vorhanden."}
+        player.get_out_of_jail_cards -= 1
+        player.in_jail = False
+        player.jail_turns = 0
+        self.status_message = f"{username} nutzt eine Gefängnisfreikarte und kommt frei!"
+        self.last_event = {"type": "jail_card_used"}
+        self._sys_chat(f"🃏 {username} nutzt eine Gefängnisfreikarte!")
+        return {"success": True}
+
     # ── Jail Buyout ──────────────────────────────────────────
 
     def buy_out_of_jail(self, username: str) -> dict:
@@ -797,6 +846,7 @@ class Game:
             "pending_rent": self.pending_rent,
             "incoming_rent_offer": self.incoming_rent_offer,
             "incoming_trade": self.active_trade,
+            "pending_card": self.pending_card,
             "free_parking_pot": self.free_parking_pot,
             "chat_messages": self.chat_messages[-80:],  # last 80 messages
         }

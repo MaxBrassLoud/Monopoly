@@ -119,6 +119,60 @@
         @keyframes rollAnim { 0%{transform:rotate(0) scale(1)} 50%{transform:rotate(180deg) scale(1.2)} 100%{transform:rotate(360deg) scale(1)} }
 
         /* Properties panel */
+        /* ── Card Popup ── */
+        .card-popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:7000; align-items:center; justify-content:center; padding:20px; }
+        .card-popup-overlay.show { display:flex; }
+        .card-popup {
+            width:100%; max-width:360px;
+            border-radius:20px; overflow:hidden;
+            box-shadow:0 20px 60px rgba(0,0,0,.7);
+            animation:cardDrop .35s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes cardDrop { from{transform:translateY(-40px) scale(.9);opacity:0} to{transform:none;opacity:1} }
+        .card-popup.chance  { background:linear-gradient(145deg,#1a1200,#2d1f00); border:2px solid #e3b341; }
+        .card-popup.community { background:linear-gradient(145deg,#001220,#001e35); border:2px solid #58a6ff; }
+        .card-popup-header {
+            padding:18px 20px 12px;
+            text-align:center;
+            border-bottom:1px solid rgba(255,255,255,.1);
+        }
+        .card-popup-type {
+            font-size:11px; font-weight:700; text-transform:uppercase;
+            letter-spacing:1.5px; margin-bottom:6px;
+        }
+        .chance  .card-popup-type { color:#e3b341; }
+        .community .card-popup-type { color:#58a6ff; }
+        .card-popup-icon { font-size:42px; margin-bottom:8px; line-height:1; }
+        .card-popup-body { padding:20px; text-align:center; }
+        .card-popup-text {
+            font-size:16px; font-weight:600; line-height:1.5;
+            color:var(--text); margin-bottom:20px;
+        }
+        .card-popup-effect {
+            font-size:13px; padding:8px 14px;
+            border-radius:8px; margin-bottom:18px; font-weight:600;
+        }
+        .card-popup-effect.positive { background:rgba(63,185,80,.15); color:var(--accent2); border:1px solid rgba(63,185,80,.3); }
+        .card-popup-effect.negative { background:rgba(248,81,73,.12); color:var(--danger); border:1px solid rgba(248,81,73,.3); }
+        .card-popup-effect.neutral  { background:rgba(255,255,255,.06); color:var(--text2); border:1px solid var(--border); }
+        .card-popup-btn {
+            width:100%; padding:12px; border:none; border-radius:10px;
+            font-size:15px; font-weight:700; cursor:pointer; font-family:inherit;
+            transition:all .15s;
+        }
+        .chance   .card-popup-btn { background:#e3b341; color:#0d1117; }
+        .chance   .card-popup-btn:hover { background:#f0c450; }
+        .community .card-popup-btn { background:#58a6ff; color:#0d1117; }
+        .community .card-popup-btn:hover { background:#79bcff; }
+
+        /* ── Jail Card Badge ── */
+        .jail-card-badge {
+            display:inline-flex; align-items:center; gap:5px;
+            background:rgba(63,185,80,.1); border:1px solid rgba(63,185,80,.35);
+            border-radius:6px; padding:4px 8px; font-size:11px; font-weight:600;
+            color:var(--accent2); margin-top:6px;
+        }
+
         /* ── Property Accordion ── */
         .prop-list { display:flex; flex-direction:column; gap:4px; }
         .prop-item { border:1px solid var(--border); border-radius:var(--r); overflow:hidden; transition:border-color .15s; }
@@ -307,6 +361,7 @@
             <button class="btn success" id="btn-buy" onclick="buyProperty()" disabled>🏷️ Kaufen</button>
             <button class="btn" id="btn-end" onclick="endTurn()" disabled>⏭️ Zug beenden</button>
             <button class="btn warning" id="btn-jail-buy" onclick="buyOutOfJail()" disabled style="display:none;">🔓 Aus Gefängnis freikaufen (50 €)</button>
+            <button class="btn success" id="btn-jail-card" onclick="useJailCard()" style="display:none;">🃏 Gefängnisfreikarte nutzen</button>
         </div>
         <div class="panel" id="props-panel" style="display:none;">
             <div class="panel-title">Meine Grundstücke</div>
@@ -332,6 +387,21 @@
         <div class="mfooter">
             <button class="btn" onclick="closeOv('ov-join')">Abbrechen</button>
             <button class="btn primary" onclick="joinGame()">Beitreten</button>
+        </div>
+    </div>
+</div>
+
+<!-- CARD POPUP -->
+<div class="card-popup-overlay" id="ov-card">
+    <div class="card-popup" id="card-popup-inner">
+        <div class="card-popup-header">
+            <div class="card-popup-type" id="card-type-label"></div>
+            <div class="card-popup-icon" id="card-icon"></div>
+        </div>
+        <div class="card-popup-body">
+            <div class="card-popup-text" id="card-text"></div>
+            <div class="card-popup-effect" id="card-effect"></div>
+            <button class="card-popup-btn" id="card-ok-btn" onclick="confirmCard()">OK — Verstanden</button>
         </div>
     </div>
 </div>
@@ -410,6 +480,71 @@ let theirOffer = { props:[], money:0 };
 function openOv(id) { document.getElementById(id).classList.add("show"); }
 function closeOv(id) { document.getElementById(id).classList.remove("show"); }
 document.querySelectorAll(".overlay").forEach(ov => ov.addEventListener("click", e => { if(e.target===ov) closeOv(ov.id); }));
+
+// ─── Card Popup ──────────────────────────────────────────────
+const CARD_ICONS = {
+    money:        v => v > 0 ? "💰" : "💸",
+    goto:         ()  => "🏁",
+    jail:         ()  => "⛓️",
+    jail_card:    ()  => "🃏",
+    move:         ()  => "🔀",
+    next_station: ()  => "🚂",
+};
+
+function cardEffectLabel(action, value) {
+    if (action === "money")        return value > 0 ? `+${value.toLocaleString("de-DE")} €` : `${value.toLocaleString("de-DE")} €`;
+    if (action === "goto")         return "→ Gehe zu Los";
+    if (action === "jail")         return "→ Gehe ins Gefängnis";
+    if (action === "jail_card")    return "→ Gefängnisfreikarte erhalten";
+    if (action === "move")         return `${value > 0 ? "+" : ""}${value} Felder`;
+    if (action === "next_station") return "→ Nächste Station";
+    return "";
+}
+
+function cardEffectClass(action, value) {
+    if (action === "money") return value >= 0 ? "positive" : "negative";
+    if (action === "jail")  return "negative";
+    if (action === "jail_card" || action === "goto") return "positive";
+    return "neutral";
+}
+
+function checkPendingCard(s) {
+    if (!s.pending_card) return;
+    const c = s.pending_card;
+    if (c.player !== ME) return;
+    if (document.getElementById("ov-card").classList.contains("show")) return;
+
+    const isChance = c.card_type === "chance";
+    const popup = document.getElementById("card-popup-inner");
+    popup.className = `card-popup ${isChance ? "chance" : "community"}`;
+
+    document.getElementById("card-type-label").textContent = isChance ? "🃏 Chance" : "📮 Gemeinschaft";
+    const iconFn = CARD_ICONS[c.action];
+    document.getElementById("card-icon").textContent = iconFn ? iconFn(c.value) : "🃏";
+    document.getElementById("card-text").textContent = c.text;
+
+    const effectEl = document.getElementById("card-effect");
+    effectEl.textContent = cardEffectLabel(c.action, c.value);
+    effectEl.className   = `card-popup-effect ${cardEffectClass(c.action, c.value)}`;
+
+    openOv("ov-card");
+}
+
+async function confirmCard() {
+    closeOv("ov-card");
+    const res = await fetch("/api/game/confirm_card", { method: "POST" });
+    if (!res.ok) { const d = await res.json(); toast("❌", d.error || "Fehler"); return; }
+    GS = await res.json();
+    updateUI(GS);
+}
+
+async function useJailCard() {
+    const res = await fetch("/api/game/use_jail_card", { method: "POST" });
+    if (!res.ok) { const d = await res.json(); toast("❌", d.error || "Fehler"); return; }
+    GS = await res.json();
+    updateUI(GS);
+    toast("🃏", GS.status);
+}
 
 // ─── Toast ───────────────────────────────────────────────────
 function toast(icon, text) {
@@ -623,13 +758,14 @@ function renderPlayers(s) {
     s.players.forEach(p => {
         const isActive = p.username===s.current_player;
         const pc = Array.isArray(p.properties)?p.properties.length:0;
+        const jailCards = p.get_out_of_jail_cards || 0;
         const card = document.createElement("div");
         card.className=`player-card${isActive?" active":""}${p.is_bankrupt?" bankrupt":""}`;
         card.innerHTML=`<div class="player-avatar" style="background:${PCOLORS[p.color]||'#888'}">${p.username.substring(0,2).toUpperCase()}</div>
             <div style="flex:1;min-width:0;">
                 <div class="player-name">${p.username}${p.username===ME?' <span style="font-size:10px;color:var(--text2);font-weight:400">(Du)</span>':''}${p.in_jail?' ⛓️':''}</div>
                 <div class="player-money">${p.money.toLocaleString("de-DE")} €</div>
-                <div class="player-props">${pc} Grundstück${pc!==1?"e":""}</div>
+                <div class="player-props">${pc} Grundstück${pc!==1?"e":""}${jailCards>0?` &middot; <span style="color:var(--accent2)">🃏 ${jailCards}x</span>`:""}</div>
             </div>${isActive?'<div class="turn-badge">AM ZUG</div>':''}`;
         list.appendChild(card);
     });
@@ -773,17 +909,28 @@ function updateBtns(s) {
     document.getElementById("btn-end").disabled = !my||ph==="roll";
     document.getElementById("status-box").textContent = s.status||"";
 
-    // Jail buyout button — show only when current player is in jail, before rolling
+    // Jail buttons — show only when player is in jail before rolling
     const me = s.players?.find(p=>p.username===ME);
-    const jailBtn = document.getElementById("btn-jail-buy");
+    const jailBtn     = document.getElementById("btn-jail-buy");
+    const jailCardBtn = document.getElementById("btn-jail-card");
     if(me?.in_jail && my && ph==="roll") {
         jailBtn.style.display = "flex";
         jailBtn.disabled = (me.money < 50);
         jailBtn.textContent = me.money < 50
             ? "🔓 Freikaufen (50 €) — kein Geld"
             : "🔓 Aus Gefängnis freikaufen (50 €)";
+
+        // Show jail card button if player has cards
+        const jailCards = me.get_out_of_jail_cards || 0;
+        if(jailCards > 0) {
+            jailCardBtn.style.display = "flex";
+            jailCardBtn.textContent = `🃏 Gefängnisfreikarte nutzen (${jailCards}x)`;
+        } else {
+            jailCardBtn.style.display = "none";
+        }
     } else {
         jailBtn.style.display = "none";
+        jailCardBtn.style.display = "none";
     }
 
     const dd = document.getElementById("dice-display");
@@ -797,6 +944,7 @@ function updateUI(s) {
     renderPlayers(s);
     updateBtns(s);
     renderProps(s);
+    checkPendingCard(s);
     checkRentPending(s);
     checkRentOffer(s);
     checkTradeIncoming(s);
@@ -1024,75 +1172,157 @@ function chip(name, color, price) {
 }
 
 function buildIncomingTrade(modal, trade) {
-    const me=GS?.players?.find(p=>p.username===ME);
-    const them=GS?.players?.find(p=>p.username===trade.from);
-    const dc=PCOLORS[them?.color]||"#888";
+    // trade object is from SENDER's perspective:
+    //   trade.my_props    = what SENDER offers   → receiver GETS these
+    //   trade.their_props = what SENDER requests  → receiver GIVES these
+    //   trade.my_money    = money SENDER pays     → receiver GETS this
+    //   trade.their_money = money SENDER wants    → receiver PAYS this
+    const me   = GS?.players?.find(p => p.username === ME);          // receiver (me)
+    const them = GS?.players?.find(p => p.username === trade.from);  // sender
 
-    const thV=(trade.their_props||[]).reduce((s,n)=>{const p=them?.properties?.find(x=>x.name===n);return s+(p?.price||0);},0)+(trade.their_money||0);
-    const myV=(trade.my_props||[]).reduce((s,n)=>{const p=me?.properties?.find(x=>x.name===n);return s+(p?.price||0);},0)+(trade.my_money||0);
-    const diff=thV-myV;
-    const bc=diff>100?"pos":diff<-100?"neg":"neu";
-    const bl=diff>0?`+${diff.toLocaleString("de-DE")} € zu deinen Gunsten`:diff<0?`${diff.toLocaleString("de-DE")} € zu deinen Lasten`:"Ausgeglichener Tausch";
+    const myColor   = PCOLORS[me?.color]   || "#888";
+    const themColor = PCOLORS[them?.color] || "#888";
 
-    const thChips=(trade.their_props||[]).map(n=>{const p=them?.properties?.find(x=>x.name===n);return chip(n,CMAP[p?.color_group]||"#888",p?.price||0);}).join("")+(trade.their_money?`<span class="prop-chip">💰 ${trade.their_money.toLocaleString("de-DE")} €</span>`:"");
-    const myChips=(trade.my_props||[]).map(n=>{const p=me?.properties?.find(x=>x.name===n);return chip(n,CMAP[p?.color_group]||"#888",p?.price||0);}).join("")+(trade.my_money?`<span class="prop-chip">💰 ${trade.my_money.toLocaleString("de-DE")} €</span>`:"");
+    // What SENDER gives me = trade.my_props + trade.my_money
+    const senderGivesProps = trade.my_props   || [];
+    const senderGivesMoney = trade.my_money   || 0;
+    // What I give sender   = trade.their_props + trade.their_money
+    const iGiveProps       = trade.their_props || [];
+    const iGiveMoney       = trade.their_money || 0;
 
-    // Counter state in closure
-    let cMyProps=[...(trade.my_props||[])];
-    let cMyMoney=trade.my_money||0;
-    let cThProps=[...(trade.their_props||[])];
-    let cThMoney=trade.their_money||0;
+    // Values
+    const senderGivesVal = senderGivesProps.reduce((s,n)=>{
+        const p = them?.properties?.find(x=>x.name===n); return s+(p?.price||0);
+    }, 0) + senderGivesMoney;
+    const iGiveVal = iGiveProps.reduce((s,n)=>{
+        const p = me?.properties?.find(x=>x.name===n); return s+(p?.price||0);
+    }, 0) + iGiveMoney;
 
-    modal.innerHTML=`
-        <h2>🤝 Angebot von <span style="color:${dc}">${trade.from}</span></h2>
+    const diff = senderGivesVal - iGiveVal;
+    const bc   = diff > 100 ? "pos" : diff < -100 ? "neg" : "neu";
+    const bl   = diff > 0
+        ? `+${diff.toLocaleString("de-DE")} € zu deinen Gunsten`
+        : diff < 0
+            ? `${diff.toLocaleString("de-DE")} € zu deinen Lasten`
+            : "Ausgeglichener Tausch";
+
+    // Chip helpers
+    const senderChips = senderGivesProps.map(n => {
+        const p = them?.properties?.find(x=>x.name===n);
+        return chip(n, CMAP[p?.color_group]||"#888", p?.price||0);
+    }).join("") + (senderGivesMoney ? `<span class="prop-chip">💰 ${senderGivesMoney.toLocaleString("de-DE")} €</span>` : "");
+
+    const iGiveChips = iGiveProps.map(n => {
+        const p = me?.properties?.find(x=>x.name===n);
+        return chip(n, CMAP[p?.color_group]||"#888", p?.price||0);
+    }).join("") + (iGiveMoney ? `<span class="prop-chip">💰 ${iGiveMoney.toLocaleString("de-DE")} €</span>` : "");
+
+    // Counter state — from RECEIVER's perspective when making a counter:
+    // In a counter, WE become the new sender, so:
+    //   cMyProps  = what WE offer (our properties)
+    //   cThProps  = what WE want  (their properties)
+    // Pre-fill with the original offer mirrored
+    let cMyProps  = [...iGiveProps];       // start with what original offer asked us to give
+    let cMyMoney  = iGiveMoney;
+    let cThProps  = [...senderGivesProps]; // start with what sender was offering
+    let cThMoney  = senderGivesMoney;
+
+    modal.innerHTML = `
+        <h2>🤝 Angebot von <span style="color:${themColor}">${trade.from}</span></h2>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-            <div style="background:var(--bg3);border-radius:var(--r);padding:10px;border:1px solid var(--border);">
-                <div class="section-lbl">${trade.from} gibt</div>
-                <div>${thChips||`<span style="color:var(--text2);font-size:11px;">Nichts</span>`}</div>
+            <div style="background:var(--bg3);border-radius:var(--r);padding:10px;border:1px solid rgba(63,185,80,.25);">
+                <div class="section-lbl" style="color:var(--accent2);">✓ ${trade.from} gibt dir</div>
+                <div style="margin-top:6px;">${senderChips || `<span style="color:var(--text2);font-size:11px;">Nichts</span>`}</div>
             </div>
-            <div style="background:var(--bg3);border-radius:var(--r);padding:10px;border:1px solid var(--border);">
-                <div class="section-lbl">Du gibst</div>
-                <div>${myChips||`<span style="color:var(--text2);font-size:11px;">Nichts</span>`}</div>
+            <div style="background:var(--bg3);border-radius:var(--r);padding:10px;border:1px solid rgba(248,81,73,.25);">
+                <div class="section-lbl" style="color:var(--danger);">✗ Du gibst</div>
+                <div style="margin-top:6px;">${iGiveChips || `<span style="color:var(--text2);font-size:11px;">Nichts</span>`}</div>
             </div>
         </div>
+
         <div class="tsum">
-            <div class="tsum-row"><span>${trade.from} Gesamtwert</span><span class="val">${thV.toLocaleString("de-DE")} €</span></div>
-            <div class="tsum-row"><span>Dein Gesamtwert</span><span class="val">${myV.toLocaleString("de-DE")} €</span></div>
+            <div class="tsum-row"><span>Du erhältst (Wert)</span><span class="val">${senderGivesVal.toLocaleString("de-DE")} €</span></div>
+            <div class="tsum-row"><span>Du gibst (Wert)</span><span class="val">${iGiveVal.toLocaleString("de-DE")} €</span></div>
             <div class="tsum-row bal ${bc}"><span>Bilanz</span><span class="val">${bl}</span></div>
         </div>
-        ${(trade.history||[]).length?`<div class="thist">${trade.history.map(h=>`<div class="hent"><span class="hwho">${h.by}</span>: ${h.action}</div>`).join("")}</div>`:""}
+
+        ${(trade.history||[]).length ? `
+        <div class="thist" style="margin-top:10px;">
+            <div style="font-size:10px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Verhandlungshistorie</div>
+            ${trade.history.map(h=>`<div class="hent"><span class="hwho">${h.by}</span>: ${h.action}</div>`).join("")}
+        </div>` : ""}
+
         <div class="counter-section">
-            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Gegenangebot (optional)</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Gegenangebot machen (optional)</div>
             <div class="tgrid">
                 <div class="tside">
-                    <h3 style="font-size:12px;"><div class="tdot" style="background:${PCOLORS[me?.color]||'#888'}"></div>Du gibst</h3>
-                    <div id="c-my-props">${cPropsHTML(me?.properties||[],cMyProps,"cmy")}</div>
-                    <div class="tmoney-row" style="margin-top:6px;"><input class="tmoney" id="c-my-money" type="number" min="0" placeholder="0" value="${cMyMoney||""}" style="font-size:12px;padding:5px 8px;"><span style="color:var(--text2);font-size:11px;">€</span></div>
+                    <h3 style="font-size:12px;">
+                        <div class="tdot" style="background:${myColor}"></div>
+                        Du gibst
+                    </h3>
+                    <div id="c-my-props">${cPropsHTML(me?.properties||[], cMyProps, "cmy")}</div>
+                    <div class="tmoney-row" style="margin-top:6px;">
+                        <input class="tmoney" id="c-my-money" type="number" min="0" placeholder="0"
+                            value="${cMyMoney||""}" style="font-size:12px;padding:5px 8px;">
+                        <span style="color:var(--text2);font-size:11px;">€</span>
+                    </div>
                 </div>
                 <div class="tmid">⇄</div>
                 <div class="tside">
-                    <h3 style="font-size:12px;"><div class="tdot" style="background:${dc}"></div>${trade.from} gibt</h3>
-                    <div id="c-their-props">${cPropsHTML(them?.properties||[],cThProps,"cth")}</div>
-                    <div class="tmoney-row" style="margin-top:6px;"><input class="tmoney" id="c-their-money" type="number" min="0" placeholder="0" value="${cThMoney||""}" style="font-size:12px;padding:5px 8px;"><span style="color:var(--text2);font-size:11px;">€</span></div>
+                    <h3 style="font-size:12px;">
+                        <div class="tdot" style="background:${themColor}"></div>
+                        ${trade.from} gibt
+                    </h3>
+                    <div id="c-their-props">${cPropsHTML(them?.properties||[], cThProps, "cth")}</div>
+                    <div class="tmoney-row" style="margin-top:6px;">
+                        <input class="tmoney" id="c-their-money" type="number" min="0" placeholder="0"
+                            value="${cThMoney||""}" style="font-size:12px;padding:5px 8px;">
+                        <span style="color:var(--text2);font-size:11px;">€</span>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div class="mfooter">
-            <button class="btn danger" onclick="respondTrade('reject')">✗ Ablehnen</button>
+            <button class="btn danger"  onclick="respondTrade('reject')">✗ Ablehnen</button>
             <button class="btn warning" onclick="respondTrade('counter')">↩ Gegenangebot</button>
             <button class="btn success" onclick="respondTrade('accept')">✓ Annehmen</button>
         </div>`;
 
-    // Wire counter toggles
+    // Wire counter prop toggles — MY properties (what I offer in counter)
     (me?.properties||[]).forEach(prop => {
-        const el=document.getElementById(`tpc-cmy-${prop.name.replace(/[\s\/]/g,'-')}`);
-        if(el) el.onclick=()=>{ const i=cMyProps.indexOf(prop.name); if(i===-1) cMyProps.push(prop.name); else cMyProps.splice(i,1); el.classList.toggle("in-offer",cMyProps.includes(prop.name)); };
+        const key = prop.name.replace(/[\s\/]/g, '-');
+        const el  = document.getElementById(`tpc-cmy-${key}`);
+        if (!el) return;
+        el.onclick = () => {
+            const i = cMyProps.indexOf(prop.name);
+            if (i === -1) cMyProps.push(prop.name); else cMyProps.splice(i, 1);
+            el.classList.toggle("in-offer", cMyProps.includes(prop.name));
+        };
     });
+
+    // Wire counter prop toggles — THEIR properties (what I request in counter)
     (them?.properties||[]).forEach(prop => {
-        const el=document.getElementById(`tpc-cth-${prop.name.replace(/[\s\/]/g,'-')}`);
-        if(el) el.onclick=()=>{ const i=cThProps.indexOf(prop.name); if(i===-1) cThProps.push(prop.name); else cThProps.splice(i,1); el.classList.toggle("in-offer",cThProps.includes(prop.name)); };
+        const key = prop.name.replace(/[\s\/]/g, '-');
+        const el  = document.getElementById(`tpc-cth-${key}`);
+        if (!el) return;
+        el.onclick = () => {
+            const i = cThProps.indexOf(prop.name);
+            if (i === -1) cThProps.push(prop.name); else cThProps.splice(i, 1);
+            el.classList.toggle("in-offer", cThProps.includes(prop.name));
+        };
     });
-    modal._counter=()=>({my_props:cMyProps,my_money:parseInt(document.getElementById("c-my-money")?.value||"0")||0,their_props:cThProps,their_money:parseInt(document.getElementById("c-their-money")?.value||"0")||0});
+
+    // Counter getter — from receiver's perspective becoming new sender:
+    // my_props  = what WE (new sender) offer
+    // their_props = what WE (new sender) request
+    modal._counter = () => ({
+        my_props:    cMyProps,
+        my_money:    parseInt(document.getElementById("c-my-money")?.value  || "0") || 0,
+        their_props: cThProps,
+        their_money: parseInt(document.getElementById("c-their-money")?.value || "0") || 0
+    });
 }
 
 function cPropsHTML(props, selected, side) {
@@ -1299,7 +1529,7 @@ async function fetchState(silent=false) {
         const oldSt=GS?.status;
         GS=ns; updateUI(GS);
         if(!silent&&oldSt!==GS.status&&GS.last_event){
-            const icons={jail:"⛓️",rent:"💸",card:"🃏",tax:"🏛️",bankrupt:"💀",land_empty:"🏷️",build:"🏗️",sell_building:"🔨",free_parking:"🅿️",jail_buyout:"🔓"};
+            const icons={jail:"⛓️",rent:"💸",card:"🃏",tax:"🏛️",bankrupt:"💀",land_empty:"🏷️",build:"🏗️",sell_building:"🔨",free_parking:"🅿️",jail_buyout:"🔓",jail_card_used:"🃏",mortgage:"🏦",unmortgage:"✅",trade:"🤝"};
             toast(icons[GS.last_event.type]||"📢",GS.status||"");
         }
     } catch(e){console.error(e);}
