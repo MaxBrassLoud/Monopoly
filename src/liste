@@ -7,15 +7,15 @@
 - Gefängis Raus Kaufen können √
 - Hypotek aufnehmen (frontend done awaiting Backend implementation) √
 - UI verbesern bis zu 6 Mitspiler ausbauen √
-- Strafen und Mieten System verbessern
+- Strafen und Mieten System verbessern √
 - 3x Pasch Gefängnis
 - Spieler größer machen für bessere übersicht mit Benutzernamen drüber
 - Chancen karten animiert aufploppen lassen √
-- Anzeigefehler Handeln
+- Anzeigefehler Handeln √
 - Würferl Animation im Feld
 - Anzeige woher man kommt?
 - Straßen kaufen im Menü √
 - Gefängnis Frei Karte implementieren und Anzeigen irgendwo? √
 - Handelsystem funktoiniert bei zu wenig geld auf dem Konto
-- Raum ersteller soll motspieler kicken können
-- bei verlassen spieler aus runde entfernen
+- Raum ersteller soll mitspieler kicken können
+- bei verlassen spieler aus runde entfernen √

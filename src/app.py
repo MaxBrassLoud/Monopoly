@@ -169,9 +169,12 @@ def discord_callback():
 @login_required
 def create_room():
     code = generate_room_code()
-    active_games[code] = Game()
+    game = Game()
+    game.host_id = session["user_id"]
+    game.host_username = session["username"]
+    active_games[code] = game
     session["room_code"] = code
-    return jsonify({"code": code}), 201
+    return jsonify({"code": code, "is_host": True}), 201
 
 
 @app.route('/api/room/join', methods=['POST'])
@@ -190,6 +193,9 @@ def join_room():
 @app.route('/api/room/leave', methods=['POST'])
 @login_required
 def leave_room():
+    game, _ = get_current_game()
+    if game:
+        game.disconnect_player(session["username"])
     session.pop("room_code", None)
     return jsonify({"message": "Raum verlassen"}), 200
 
@@ -200,7 +206,9 @@ def room_info():
     code = get_room_code()
     if not code or code not in active_games:
         return jsonify({"in_room": False}), 200
-    return jsonify({"in_room": True, "code": code, "player_count": len(active_games[code].players)}), 200
+    game = active_games[code]
+    is_host = game.host_id == session.get("user_id","")
+    return jsonify({"in_room": True, "code": code, "player_count": len(game.players), "is_host": is_host}), 200
 
 
 # ── Game State ────────────────────────────────────────────────
@@ -306,6 +314,22 @@ def mortgage():
         result = game.take_mortgage(prop, session["username"])
     else:
         result = game.lift_mortgage(prop, session["username"])
+    if not result.get("success"):
+        return jsonify({"error": result.get("error", "Fehler")}), 400
+    return jsonify(game.to_dict())
+
+
+@app.route('/api/room/kick', methods=['POST'])
+@login_required
+def kick_player():
+    game, _ = get_current_game()
+    if not game:
+        return jsonify({"error": "Kein Raum"}), 400
+    data = request.get_json(silent=True) or {}
+    target = data.get("username", "").strip()
+    if not target:
+        return jsonify({"error": "Kein Benutzername angegeben"}), 400
+    result = game.kick_player(session["user_id"], target)
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Fehler")}), 400
     return jsonify(game.to_dict())

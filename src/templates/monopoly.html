@@ -119,6 +119,41 @@
         @keyframes rollAnim { 0%{transform:rotate(0) scale(1)} 50%{transform:rotate(180deg) scale(1.2)} 100%{transform:rotate(360deg) scale(1)} }
 
         /* Properties panel */
+        /* ── Winner Overlay ── */
+        .winner-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:30px; }
+        .winner-overlay.show { display:flex; }
+        .winner-crown { font-size:80px; line-height:1; margin-bottom:16px; animation:crownPop .6s cubic-bezier(.34,1.56,.64,1); }
+        .winner-name { font-size:36px; font-weight:800; background:linear-gradient(135deg,#e3b341,#fb923c); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; }
+        .winner-sub { font-size:16px; color:var(--text2); margin-bottom:6px; }
+        .winner-assets { font-size:24px; font-weight:700; color:var(--accent2); font-family:'JetBrains Mono',monospace; margin-bottom:30px; }
+        @keyframes crownPop { from{transform:scale(0) rotate(-20deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+
+        /* ── Host & Disconnect ── */
+        .player-card.disconnected { opacity:.4; border-color:rgba(248,81,73,.3); border-style:dashed; }
+        .host-badge { font-size:9px; font-weight:700; color:var(--warning); border:1px solid var(--warning); border-radius:4px; padding:1px 5px; margin-left:4px; }
+        .kick-btn { margin-left:auto; padding:3px 8px; border:1px solid rgba(248,81,73,.4); border-radius:5px; background:transparent; color:var(--danger); font-size:10px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .15s; flex-shrink:0; }
+        .kick-btn:hover { background:rgba(248,81,73,.15); }
+        .disconn-badge { font-size:9px; color:var(--danger); background:rgba(248,81,73,.1); border:1px solid rgba(248,81,73,.3); border-radius:3px; padding:1px 4px; margin-left:4px; }
+
+        /* ── Winner Screen ── */
+        .winner-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:30px; }
+        .winner-overlay.show { display:flex; }
+        .winner-box { max-width:480px; width:100%; }
+        .winner-trophy { font-size:80px; margin-bottom:16px; animation:trophyPop .6s cubic-bezier(.34,1.56,.64,1); }
+        @keyframes trophyPop { from{transform:scale(0) rotate(-20deg);opacity:0} to{transform:none;opacity:1} }
+        .winner-title { font-size:32px; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg,#e3b341,#f0c450); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .winner-name  { font-size:22px; font-weight:700; color:var(--text); margin-bottom:20px; }
+        .winner-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
+        .winner-stat  { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:14px; }
+        .winner-stat .wlabel { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+        .winner-stat .wval   { font-size:20px; font-weight:700; color:var(--accent2); }
+        .winner-ranking { margin-bottom:20px; }
+        .rank-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:8px; margin-bottom:6px; background:rgba(255,255,255,.05); font-size:13px; }
+        .rank-row.rank-1 { background:rgba(227,179,65,.15); border:1px solid rgba(227,179,65,.3); }
+        .rank-medal { font-size:18px; width:24px; flex-shrink:0; }
+        .rank-name  { flex:1; font-weight:600; }
+        .rank-val   { color:var(--text2); font-size:12px; }
+
         /* ── Card Popup ── */
         .card-popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:7000; align-items:center; justify-content:center; padding:20px; }
         .card-popup-overlay.show { display:flex; }
@@ -391,6 +426,30 @@
     </div>
 </div>
 
+<!-- WINNER OVERLAY -->
+<div class="winner-overlay" id="winner-overlay">
+    <div class="winner-crown">👑</div>
+    <div class="winner-name" id="winner-name"></div>
+    <div class="winner-sub">hat das Spiel gewonnen!</div>
+    <div class="winner-assets" id="winner-assets"></div>
+    <a href="/" style="padding:14px 32px;background:linear-gradient(135deg,#e3b341,#fb923c);border-radius:12px;font-weight:800;font-size:16px;color:#0d1117;text-decoration:none;display:inline-block;">🏠 Zurück zum Dashboard</a>
+</div>
+
+<!-- WINNER SCREEN -->
+<div class="winner-overlay" id="winner-overlay">
+    <div class="winner-box">
+        <div class="winner-trophy">🏆</div>
+        <div class="winner-title">Spiel beendet!</div>
+        <div class="winner-name" id="winner-name"></div>
+        <div class="winner-stats">
+            <div class="winner-stat"><div class="wlabel">Bargeld</div><div class="wval" id="winner-money"></div></div>
+            <div class="winner-stat"><div class="wlabel">Gesamtvermögen</div><div class="wval" id="winner-assets"></div></div>
+        </div>
+        <div class="winner-ranking" id="winner-ranking"></div>
+        <a href="/" style="display:inline-block;padding:12px 32px;background:var(--accent);color:#0d1117;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;">Zurück zum Dashboard</a>
+    </div>
+</div>
+
 <!-- CARD POPUP -->
 <div class="card-popup-overlay" id="ov-card">
     <div class="card-popup" id="card-popup-inner">
@@ -459,6 +518,7 @@ const COLORS = ["blue","red","green","yellow","purple","orange","pink","teal","l
 
 // ─── State ───────────────────────────────────────────────────
 let GS = null;            // game state
+let IS_HOST = false;       // am I the room host?
 let selColor = "blue";
 let toastTm = null;
 let pollTm = null;
@@ -755,18 +815,33 @@ function renderPlayers(s) {
     const list = document.getElementById("players-list");
     list.innerHTML = "";
     if(!s?.players?.length) { list.innerHTML=`<p style="color:var(--text2);font-size:12px;">Noch keine Spieler.</p>`; return; }
+    const hostName = s.host_username || "";
     s.players.forEach(p => {
         const isActive = p.username===s.current_player;
         const pc = Array.isArray(p.properties)?p.properties.length:0;
         const jailCards = p.get_out_of_jail_cards || 0;
+        const isDisconn = p.is_disconnected || false;
+        const isHostPlayer = p.username === hostName;
         const card = document.createElement("div");
-        card.className=`player-card${isActive?" active":""}${p.is_bankrupt?" bankrupt":""}`;
+        card.className=`player-card${isActive?" active":""}${p.is_bankrupt?" bankrupt":""}${isDisconn?" disconnected":""}`;
+        const disconnTag = isDisconn ? '<span class="disconn-badge">Offline</span>' : '';
+        const hostTag    = isHostPlayer ? '<span class="host-badge">HOST</span>' : '';
         card.innerHTML=`<div class="player-avatar" style="background:${PCOLORS[p.color]||'#888'}">${p.username.substring(0,2).toUpperCase()}</div>
             <div style="flex:1;min-width:0;">
-                <div class="player-name">${p.username}${p.username===ME?' <span style="font-size:10px;color:var(--text2);font-weight:400">(Du)</span>':''}${p.in_jail?' ⛓️':''}</div>
+                <div class="player-name">${p.username}${p.username===ME?' <span style="font-size:10px;color:var(--text2);font-weight:400">(Du)</span>':''}${hostTag}${p.in_jail?' ⛓️':''}${disconnTag}</div>
                 <div class="player-money">${p.money.toLocaleString("de-DE")} €</div>
                 <div class="player-props">${pc} Grundstück${pc!==1?"e":""}${jailCards>0?` &middot; <span style="color:var(--accent2)">🃏 ${jailCards}x</span>`:""}</div>
-            </div>${isActive?'<div class="turn-badge">AM ZUG</div>':''}`;
+            </div>${isActive&&!isDisconn?'<div class="turn-badge">AM ZUG</div>':''}`;
+
+        // Host can kick non-host, non-self players
+        if(IS_HOST && p.username !== ME && !isDisconn && !p.is_bankrupt) {
+            const kickBtn = document.createElement("button");
+            kickBtn.className = "kick-btn";
+            kickBtn.textContent = "✕ Kicken";
+            kickBtn.onclick = (e) => { e.stopPropagation(); kickPlayer(p.username); };
+            card.appendChild(kickBtn);
+        }
+
         list.appendChild(card);
     });
 }
@@ -944,11 +1019,61 @@ function updateUI(s) {
     renderPlayers(s);
     updateBtns(s);
     renderProps(s);
+    checkWinner(s);
     checkPendingCard(s);
     checkRentPending(s);
     checkRentOffer(s);
     checkTradeIncoming(s);
     renderChat(s);
+}
+
+let winnerShown = false;
+function checkWinner(s) {
+    if (!s.winner && !(s.last_event?.type === "winner")) return;
+    if (winnerShown) return;
+    winnerShown = true;
+
+    const winnerName = s.winner || s.last_event?.player || "?";
+    const winnerPlayer = s.players?.find(p => p.username === winnerName);
+
+    // Compute total asset value client-side (mirrors backend)
+    function assetVal(p) {
+        if (!p) return 0;
+        let v = p.money || 0;
+        (p.properties || []).forEach(pr => {
+            if (!pr.is_mortgaged) v += Math.floor((pr.price || 0) / 2);
+            if (pr.houses === 5) v += (pr.house_cost || 0);
+            else v += (pr.houses || 0) * (pr.house_cost || 0);
+        });
+        return v;
+    }
+
+    document.getElementById("winner-name").textContent = `🎉 ${winnerName} gewinnt!`;
+    document.getElementById("winner-money").textContent =
+        winnerPlayer ? `${(winnerPlayer.money || 0).toLocaleString("de-DE")} €` : "–";
+    document.getElementById("winner-assets").textContent =
+        winnerPlayer ? `${assetVal(winnerPlayer).toLocaleString("de-DE")} €` : "–";
+
+    // Ranking (all players sorted by total assets)
+    const ranking = document.getElementById("winner-ranking");
+    ranking.innerHTML = "";
+    if (s.players?.length > 1) {
+        const medals = ["🥇","🥈","🥉"];
+        const sorted = [...s.players].sort((a,b) => assetVal(b) - assetVal(a));
+        sorted.forEach((p, i) => {
+            const row = document.createElement("div");
+            row.className = "rank-row" + (i === 0 ? " rank-1" : "");
+            const status = p.is_bankrupt ? "💀 Bankrott" : p.is_disconnected ? "👋 Verlassen" : `${assetVal(p).toLocaleString("de-DE")} €`;
+            row.innerHTML = `<span class="rank-medal">${medals[i] || `${i+1}.`}</span>
+                <div class="player-avatar" style="width:22px;height:22px;font-size:9px;background:${PCOLORS[p.color]||'#888'};border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:white;font-weight:800;flex-shrink:0;">${p.username.substring(0,2).toUpperCase()}</div>
+                <span class="rank-name">${p.username}</span>
+                <span class="rank-val">${status}</span>`;
+            ranking.appendChild(row);
+        });
+    }
+
+    document.getElementById("winner-overlay").classList.add("show");
+    clearInterval(pollTm);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -967,8 +1092,26 @@ function checkRentPending(s) {
     const myMoney = me?.money||0;
     document.getElementById("rent-my-money").textContent = `${myMoney.toLocaleString("de-DE")} €`;
     const payBtn = document.getElementById("btn-pay");
-    if(myMoney < rent.amount) { payBtn.textContent="⚠️ Nicht genug Geld!"; payBtn.disabled=true; }
-    else { payBtn.textContent="💳 Miete zahlen"; payBtn.disabled=false; }
+    // Compute total liquidation value
+    const totalAssets = (me?.properties||[]).reduce((sum,p)=>{
+        if(!p.is_mortgaged) sum += Math.floor((p.price||0)/2);
+        if(p.houses===5) sum+=(p.house_cost||0);
+        else sum+=(p.houses||0)*(p.house_cost||0);
+        return sum;
+    }, myMoney);
+    if(myMoney >= rent.amount) {
+        payBtn.textContent="💳 Miete zahlen";
+        payBtn.disabled=false;
+        payBtn.className="btn danger";
+    } else if(totalAssets >= rent.amount) {
+        payBtn.textContent=`⚠️ Erst Gebäude/Hypotheken verwerten (Kasse: ${myMoney.toLocaleString("de-DE")} €)`;
+        payBtn.disabled=true;
+        payBtn.className="btn";
+    } else {
+        payBtn.textContent=`💀 Bankrott unvermeidlich — trotzdem bestätigen`;
+        payBtn.disabled=false;
+        payBtn.className="btn danger";
+    }
 
     // Property offer list
     const ol = document.getElementById("offer-list");
@@ -1529,14 +1672,33 @@ async function fetchState(silent=false) {
         const oldSt=GS?.status;
         GS=ns; updateUI(GS);
         if(!silent&&oldSt!==GS.status&&GS.last_event){
-            const icons={jail:"⛓️",rent:"💸",card:"🃏",tax:"🏛️",bankrupt:"💀",land_empty:"🏷️",build:"🏗️",sell_building:"🔨",free_parking:"🅿️",jail_buyout:"🔓",jail_card_used:"🃏",mortgage:"🏦",unmortgage:"✅",trade:"🤝"};
+            const icons={jail:"⛓️",rent:"💸",card:"🃏",tax:"🏛️",bankrupt:"💀",land_empty:"🏷️",build:"🏗️",sell_building:"🔨",free_parking:"🅿️",jail_buyout:"🔓",jail_card_used:"🃏",mortgage:"🏦",unmortgage:"✅",trade:"🤝",disconnect:"👋"};
             toast(icons[GS.last_event.type]||"📢",GS.status||"");
         }
     } catch(e){console.error(e);}
 }
 
+// ── Kick Player ──────────────────────────────────────────────
+async function kickPlayer(username) {
+    if (!confirm(`${username} wirklich aus dem Spiel entfernen?`)) return;
+    const res = await fetch("/api/room/kick", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username })
+    });
+    if (!res.ok) { const d = await res.json(); toast("❌", d.error || "Fehler"); return; }
+    GS = await res.json(); updateUI(GS);
+    toast("🚫", `${username} wurde entfernt.`);
+}
+
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
+    // Check if we are the host
+    try {
+        const ri = await fetch("/api/room/info");
+        if (ri.ok) { const rd = await ri.json(); IS_HOST = rd.is_host || false; }
+    } catch(e) {}
+
     await fetchState(true);
     // If player not yet in game, show join modal automatically
     if (GS && !GS.players.find(p => p.username === ME)) {
