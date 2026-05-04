@@ -165,6 +165,7 @@ class Game:
         random.shuffle(self.community_deck)
         self.turn_phase = "roll"
         self.last_event = None
+        self.last_move: Optional[dict] = None
 
         # Rent confirmation
         self.pending_rent: Optional[dict] = None      # awaiting payer confirmation
@@ -248,7 +249,15 @@ class Game:
     def _move_player(self, player, steps):
         old_pos = player.position
         player.position = (player.position + steps) % 40
-        if player.position < old_pos:
+        # Store movement info so frontend can animate step-by-step
+        self.last_move = {
+            "player": player.username,
+            "from": old_pos,
+            "to": player.position,
+            "steps": steps,
+            "passed_go": player.position < old_pos and steps > 0
+        }
+        if player.position < old_pos and steps > 0:
             player.money += 200
             self.status_message = f"{player.username} überquert Los und erhält 200 €!"
         self._handle_field(player)
@@ -984,6 +993,7 @@ class Game:
             "pending_rent": self.pending_rent,
             "incoming_rent_offer": self.incoming_rent_offer,
             "incoming_trade": self.active_trade,
+            "last_move": self.last_move,
             "host_username": self.host_username,
             "pending_card": self.pending_card,
             "winner": self.last_event.get("player") if self.last_event and self.last_event.get("type") == "winner" else None,

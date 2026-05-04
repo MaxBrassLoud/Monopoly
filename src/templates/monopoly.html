@@ -47,7 +47,7 @@
             border-radius:4px; display:flex; flex-direction:column;
             align-items:center; justify-content:flex-start;
             text-align:center; position:relative; cursor:pointer;
-            transition:border-color .15s, box-shadow .15s;
+            transition:border-color .15s, box-shadow .3s, background .2s;
             overflow:hidden; min-width:0; min-height:0; padding:0;
         }
         .field:hover { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); z-index:3; }
@@ -83,13 +83,15 @@
 
         /* Sidebar */
         .sidebar { display:flex; flex-direction:column; gap:12px; }
-        .panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:14px; }
+        .panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:14px; transition:box-shadow .2s; }
+        .panel:focus-within { box-shadow:0 0 0 2px rgba(88,166,255,.2); }
         .panel-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text2); margin-bottom:10px; }
 
         /* Buttons */
         .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:8px 14px; border-radius:var(--r); border:1px solid var(--border); background:var(--bg3); color:var(--text); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; width:100%; margin-bottom:6px; }
         .btn:last-child { margin-bottom:0; }
         .btn:hover:not(:disabled) { background:var(--bg4); border-color:var(--accent); color:var(--accent); }
+        .btn:active:not(:disabled) { transform:scale(.97); }
         .btn:disabled { opacity:.3; cursor:not-allowed; }
         .btn.primary { background:var(--accent); border-color:var(--accent); color:#0d1117; font-weight:700; }
         .btn.primary:hover:not(:disabled) { background:#79bcff; color:#0d1117; }
@@ -101,7 +103,7 @@
         .btn.warning:hover:not(:disabled) { background:rgba(227,179,65,.1); }
 
         /* Player cards */
-        .player-card { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:var(--r); border:1px solid var(--border); margin-bottom:7px; background:var(--bg3); transition:border-color .2s; }
+        .player-card { display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:var(--r); border:1px solid var(--border); margin-bottom:7px; background:var(--bg3); transition:border-color .2s, background .3s, opacity .5s; }
         .player-card:last-child { margin-bottom:0; }
         .player-card.active { border-color:var(--warning); background:rgba(227,179,65,.05); }
         .player-card.bankrupt { opacity:.35; }
@@ -112,11 +114,83 @@
         .turn-badge { margin-left:auto; font-size:9px; font-weight:700; color:var(--warning); border:1px solid var(--warning); border-radius:4px; padding:2px 5px; white-space:nowrap; }
 
         /* Status / Dice */
-        .status-box { background:var(--bg3); border-radius:var(--r); padding:10px 12px; font-size:13px; line-height:1.5; min-height:48px; border-left:3px solid var(--accent); }
+        .status-box { background:var(--bg3); border-radius:var(--r); padding:10px 12px; font-size:13px; line-height:1.5; min-height:48px; border-left:3px solid var(--accent); transition:border-color .3s; }
         .dice-display { display:flex; align-items:center; justify-content:center; gap:10px; margin:10px 0; }
         .die { width:40px; height:40px; background:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; color:#1a1a2e; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.5); }
         .die.rolling { animation:rollAnim .3s ease; }
         @keyframes rollAnim { 0%{transform:rotate(0) scale(1)} 50%{transform:rotate(180deg) scale(1.2)} 100%{transform:rotate(360deg) scale(1)} }
+
+        /* ── Token move animation ── */
+        @keyframes tokenBounce  { 0%{transform:scale(1)} 30%{transform:scale(1.7) translateY(-5px)} 65%{transform:scale(.88)} 100%{transform:scale(1)} }
+        @keyframes tokenPop     { 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.35)} 100%{transform:scale(1);opacity:1} }
+        .token.moving     { animation:tokenBounce .28s ease-out; }
+        .token.just-added { animation:tokenPop .4s cubic-bezier(.34,1.56,.64,1); }
+
+        /* ── Field step-through highlights ── */
+        @keyframes fieldStep    { 0%{background:var(--bg3)} 40%{background:rgba(88,166,255,.18);border-color:rgba(88,166,255,.5)} 100%{background:var(--bg3)} }
+        @keyframes fieldStart   { 0%{background:rgba(88,166,255,.12);border-color:var(--accent)} 100%{background:var(--bg3)} }
+        @keyframes fieldArrive  { 0%{transform:scale(1)} 20%{transform:scale(1.04);background:rgba(63,185,80,.2);border-color:var(--accent2);box-shadow:0 0 0 3px rgba(63,185,80,.4)} 100%{transform:scale(1);background:var(--bg3)} }
+        @keyframes fieldArriveRent { 0%,100%{background:var(--bg3)} 20%{background:rgba(248,81,73,.2);border-color:var(--danger);box-shadow:0 0 0 4px rgba(248,81,73,.3)} }
+        @keyframes fieldPassGo  { 0%{box-shadow:0 0 0 0 rgba(227,179,65,.9)} 60%{box-shadow:0 0 0 14px rgba(227,179,65,0)} 100%{box-shadow:none} }
+        .field.step-through { animation:fieldStep   .22s ease-out; }
+        .field.step-start   { animation:fieldStart  .5s ease-out; }
+        .field.step-arrive  { animation:fieldArrive  .55s cubic-bezier(.34,1.2,.64,1); }
+        .field.step-arrive-rent { animation:fieldArriveRent .6s ease-out 2; }
+        .field.pass-go      { animation:fieldPassGo .6s ease-out; }
+
+        /* ── Field land highlight ── */
+        @keyframes fieldPulse { 0%{box-shadow:0 0 0 0 rgba(88,166,255,.7)} 70%{box-shadow:0 0 0 8px rgba(88,166,255,0)} 100%{box-shadow:0 0 0 0 rgba(88,166,255,0)} }
+        @keyframes fieldRent  { 0%{box-shadow:0 0 0 0 rgba(248,81,73,.8)} 70%{box-shadow:0 0 0 10px rgba(248,81,73,0)} 100%{box-shadow:0 0 0 0 rgba(248,81,73,0)} }
+        @keyframes fieldBuy   { 0%{box-shadow:0 0 0 0 rgba(63,185,80,.8)} 70%{box-shadow:0 0 0 10px rgba(63,185,80,0)} 100%{box-shadow:0 0 0 0 rgba(63,185,80,0)} }
+        @keyframes fieldJail  { 0%{box-shadow:0 0 0 0 rgba(248,81,73,1)} 50%{box-shadow:0 0 0 14px rgba(248,81,73,0)} 100%{box-shadow:0 0 0 0 rgba(248,81,73,0)} }
+        .field.anim-land { animation:fieldPulse .8s ease-out; }
+        .field.anim-rent { animation:fieldRent .8s ease-out; }
+        .field.anim-buy  { animation:fieldBuy  .8s ease-out; }
+        .field.anim-jail { animation:fieldJail .6s ease-out 2; }
+
+        /* ── Money float ── */
+        @keyframes moneyFloat { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-56px);opacity:0} }
+        .money-float {
+            position:fixed; pointer-events:none; z-index:8000;
+            font-size:16px; font-weight:800; font-family:'JetBrains Mono',monospace;
+            animation:moneyFloat .9s ease-out forwards;
+            white-space:nowrap;
+        }
+        .money-float.positive { color:#3fb950; text-shadow:0 0 8px rgba(63,185,80,.5); }
+        .money-float.negative { color:#f85149; text-shadow:0 0 8px rgba(248,81,73,.5); }
+
+        /* ── Player card flash ── */
+        @keyframes cardFlashGreen { 0%,100%{background:var(--bg3)} 30%{background:rgba(63,185,80,.18)} }
+        @keyframes cardFlashRed   { 0%,100%{background:var(--bg3)} 30%{background:rgba(248,81,73,.18)} }
+        @keyframes cardShake      { 0%,100%{transform:none} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+        .player-card.flash-green { animation:cardFlashGreen .6s ease; }
+        .player-card.flash-red   { animation:cardFlashRed   .6s ease; }
+        .player-card.flash-shake { animation:cardShake .4s ease; }
+
+        /* ── Build pop ── */
+        @keyframes buildPop { 0%{transform:scale(0) rotate(-15deg);opacity:0} 60%{transform:scale(1.2) rotate(3deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+        .field-buildings.just-built { animation:buildPop .4s cubic-bezier(.34,1.56,.64,1); }
+
+        /* ── Turn transition ── */
+        @keyframes turnFade { 0%{opacity:0;transform:translateY(-6px)} 100%{opacity:1;transform:none} }
+        .status-box.new-turn { animation:turnFade .35s ease-out; }
+
+        /* ── Overlay pop-in ── */
+        @keyframes overlayIn { from{transform:scale(.92) translateY(12px);opacity:0} to{transform:none;opacity:1} }
+        .overlay.show .modal { animation:overlayIn .28s cubic-bezier(.34,1.2,.64,1); }
+        .overlay.show .card-popup { animation:overlayIn .3s cubic-bezier(.34,1.4,.64,1); }
+
+        /* ── Pasch flash on dice ── */
+        @keyframes paschGlow { 0%,100%{background:white} 50%{background:#fffde0;box-shadow:0 0 16px #e3b341} }
+        .die.pasch { animation:paschGlow .5s ease 2; }
+
+        /* ── Bankrupt effect ── */
+        @keyframes bankruptFade { 0%{opacity:1;filter:none} 100%{opacity:.35;filter:grayscale(1)} }
+        .player-card.going-bankrupt { animation:bankruptFade .8s ease forwards; }
+
+        /* ── Coin spin for free parking ── */
+        @keyframes coinSpin { 0%{transform:scale(1) rotateY(0)} 50%{transform:scale(1.3) rotateY(180deg)} 100%{transform:scale(1) rotateY(360deg)} }
+        .parking-pot.winning { animation:coinSpin .6s ease; display:inline-flex; }
 
         /* Properties panel */
         /* ── Winner Overlay ── */
@@ -246,6 +320,22 @@
         .parking-pot.empty { background:rgba(48,54,61,.4); border-color:var(--border); color:var(--text2); font-weight:400; font-size:clamp(8px,1.1cqi,12px); }
         .parking-pot span { color:var(--accent2); }
 
+        /* Rent modal split layout */
+        .rent-split { display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+        .rent-liquidate-panel { background:var(--bg3); border:1px solid var(--border); border-radius:var(--r); padding:12px; }
+        .rent-liquidate-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text2); margin-bottom:8px; }
+        .rliq-prop { display:flex; align-items:center; gap:6px; padding:5px 6px; border-radius:5px; border:1px solid var(--border); margin-bottom:4px; background:var(--bg2); font-size:11px; }
+        .rliq-prop:last-child { margin-bottom:0; }
+        .rliq-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .rliq-name { flex:1; font-weight:500; font-size:10px; }
+        .rliq-btn { font-size:9px; padding:2px 5px; border:1px solid var(--border); border-radius:3px; background:var(--bg3); cursor:pointer; font-family:inherit; white-space:nowrap; }
+        .rliq-btn.sell { color:var(--danger); border-color:rgba(248,81,73,.4); }
+        .rliq-btn.sell:hover { background:rgba(248,81,73,.1); }
+        .rliq-btn.mtg  { color:var(--warning); border-color:rgba(227,179,65,.4); }
+        .rliq-btn.mtg:hover  { background:rgba(227,179,65,.1); }
+        .rliq-btn:disabled { opacity:.3; cursor:default; }
+        @media(max-width:500px) { .rent-split { grid-template-columns:1fr; } }
+
         /* Toast */
         .event-toast { position:fixed; top:24px; right:24px; background:var(--bg2); border:1px solid var(--border); border-radius:var(--rl); padding:14px 18px; max-width:300px; z-index:9000; box-shadow:0 8px 32px rgba(0,0,0,.6); transform:translateX(400px); transition:transform .3s ease; font-size:13px; }
         .event-toast.show { transform:translateX(0); }
@@ -278,7 +368,7 @@
         .chat-send:hover { background:#79bcff; }
 
         /* Overlays */
-        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:5000; align-items:center; justify-content:center; padding:20px; }
+        .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:5000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
         .overlay.show { display:flex; }
         .modal { background:var(--bg2); border:1px solid var(--border); border-radius:var(--rxl); padding:24px; width:100%; max-height:90vh; overflow-y:auto; }
         .modal h2 { font-size:17px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
@@ -467,21 +557,32 @@
 
 <!-- RENT PAY OVERLAY (payer) -->
 <div class="overlay" id="ov-rent">
-    <div class="modal" style="max-width:440px;">
+    <div class="modal" style="max-width:720px;">
         <h2>💸 Miete fällig!</h2>
         <div class="rent-amount-display" id="rent-amount"></div>
         <div class="rent-to-display" id="rent-to"></div>
-        <div class="info-box">
-            Dein Kontostand: <strong style="color:var(--accent2);" id="rent-my-money"></strong>
+
+        <div class="rent-split">
+            <!-- Left: payment options -->
+            <div>
+                <div class="info-box" style="margin-bottom:10px;">
+                    Dein Kontostand: <strong style="color:var(--accent2);" id="rent-my-money"></strong>
+                </div>
+                <button class="btn danger" id="btn-pay" onclick="payRent()" style="margin-bottom:8px;">💳 Miete zahlen</button>
+                <div class="divider"></div>
+                <div class="section-lbl">🏠 Grundstück anbieten</div>
+                <p style="font-size:11px;color:var(--text2);margin-bottom:8px;">Gläubiger muss zustimmen.</p>
+                <div class="offer-list" id="offer-list"></div>
+                <button class="btn warning" id="btn-offer-prop" onclick="offerPropForRent()" style="margin-top:8px;" disabled>📤 Grundstück anbieten</button>
+            </div>
+
+            <!-- Right: liquidation tools -->
+            <div class="rent-liquidate-panel" id="rent-liquidate-panel">
+                <div class="rent-liquidate-title">🔨 Sofort liquidieren</div>
+                <p style="font-size:10px;color:var(--text2);margin-bottom:8px;">Verkaufe Gebäude oder nimm Hypotheken auf um Bargeld zu beschaffen.</p>
+                <div id="rent-liquidate-list"><p style="font-size:11px;color:var(--text2);">Keine Grundstücke.</p></div>
+            </div>
         </div>
-        <div class="mfooter" style="margin-bottom:0;">
-            <button class="btn danger" id="btn-pay" onclick="payRent()">💳 Miete zahlen</button>
-        </div>
-        <div class="divider"></div>
-        <div class="section-lbl">🏠 Stattdessen Grundstück anbieten</div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Der Gläubiger muss zustimmen.</p>
-        <div class="offer-list" id="offer-list"></div>
-        <button class="btn warning" id="btn-offer-prop" onclick="offerPropForRent()" style="margin-top:10px;" disabled>📤 Ausgewähltes Grundstück anbieten</button>
     </div>
 </div>
 
@@ -540,6 +641,288 @@ let theirOffer = { props:[], money:0 };
 function openOv(id) { document.getElementById(id).classList.add("show"); }
 function closeOv(id) { document.getElementById(id).classList.remove("show"); }
 document.querySelectorAll(".overlay").forEach(ov => ov.addEventListener("click", e => { if(e.target===ov) closeOv(ov.id); }));
+
+// ══════════════════════════════════════════════════════════════
+//  ANIMATION ENGINE
+// ══════════════════════════════════════════════════════════════
+
+let prevPositions = {};   // username → last known position
+let prevMoneys    = {};   // username → last known money
+let prevEventType = null; // last event type to avoid re-animating
+
+// ── Money float label ──────────────────────────────────────────
+function spawnMoneyFloat(x, y, amount) {
+    const el = document.createElement("div");
+    el.className = "money-float " + (amount >= 0 ? "positive" : "negative");
+    el.textContent = (amount >= 0 ? "+" : "") + amount.toLocaleString("de-DE") + " €";
+    el.style.left = x + "px";
+    el.style.top  = y + "px";
+    document.body.appendChild(el);
+    el.addEventListener("animationend", () => el.remove());
+}
+
+function spawnMoneyFloatNearElement(elId, amount) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    spawnMoneyFloat(rect.left + rect.width / 2 - 30, rect.top, amount);
+}
+
+function spawnMoneyFloatNearPlayer(username, amount) {
+    // Find the player card in the DOM
+    const playerList = document.getElementById("players-list");
+    if (!playerList) return;
+    const cards = playerList.querySelectorAll(".player-card");
+    cards.forEach(card => {
+        if (card.textContent.includes(username)) {
+            const rect = card.getBoundingClientRect();
+            spawnMoneyFloat(rect.left + 60, rect.top + 10, amount);
+        }
+    });
+}
+
+// ── Field helpers ────────────────────────────────────────────
+function getFieldEl(idx) {
+    return document.querySelector(`.field[data-fi="${idx}"]`);
+}
+
+function applyFieldClass(idx, cls, durationMs) {
+    const el = getFieldEl(idx);
+    if (!el) return;
+    const ALL = ["step-through","step-start","step-arrive","step-arrive-rent","pass-go","anim-land","anim-rent","anim-buy","anim-jail"];
+    ALL.forEach(c => el.classList.remove(c));
+    void el.offsetWidth;
+    el.classList.add(cls);
+    if (durationMs) setTimeout(() => el.classList.remove(cls), durationMs);
+    else el.addEventListener("animationend", () => el.classList.remove(cls), {once:true});
+}
+
+function pulseField(fieldIdx, type) {
+    const map = { land:"anim-land", rent:"anim-rent", buy:"anim-buy", jail:"anim-jail" };
+    applyFieldClass(fieldIdx, map[type] || "anim-land");
+}
+
+// ── Token bounce ──────────────────────────────────────────────
+function bounceToken(username) {
+    document.querySelectorAll(`.token[title="${username}"]`).forEach(t => {
+        t.classList.remove("moving","just-added");
+        void t.offsetWidth;
+        t.classList.add("moving");
+        t.addEventListener("animationend", () => t.classList.remove("moving"), {once:true});
+    });
+}
+
+function animateToken(username, isNew) {
+    document.querySelectorAll(`.token[title="${username}"]`).forEach(t => {
+        const cls = isNew ? "just-added" : "moving";
+        t.classList.remove("moving","just-added");
+        void t.offsetWidth;
+        t.classList.add(cls);
+        t.addEventListener("animationend", () => t.classList.remove(cls), {once:true});
+    });
+}
+
+// ══ WALK ANIMATION ═══════════════════════════════════════════
+// Animates a token stepping field-by-field from `from` to `to`.
+// During walk the board is NOT re-rendered — we manipulate tokens directly.
+
+let walkInProgress = false;
+
+function buildWalkPath(from, to, steps) {
+    // Build the list of field indices visited (not skipping over Go)
+    const path = [];
+    let cur = from;
+    for (let i = 0; i < steps; i++) {
+        cur = (cur + 1) % 40;
+        path.push(cur);
+    }
+    return path;  // last element === to
+}
+
+async function walkToken(username, from, to, steps, passedGo, lastEventType) {
+    if (from === to && steps !== 40) return; // no movement
+    walkInProgress = true;
+
+    // Highlight starting field
+    applyFieldClass(from, "step-start", 1800);
+
+    const path = buildWalkPath(from, to, Math.abs(steps));
+    const STEP_MS  = steps <= 6  ? 210 : steps <= 10 ? 160 : 120;
+    const PAUSE_MS = 60;
+
+    // Temporarily inject a "ghost" token at starting position so we can see it
+    // The real token is on the field; we'll bounce it at each step
+    // We do this by temporarily setting prevPositions to current field and
+    // rendering the board mid-walk — but that's too expensive.
+    // Instead, we add/remove CSS classes per field to simulate the walk.
+
+    for (let i = 0; i < path.length; i++) {
+        const fieldIdx = path[i];
+        const isLast   = i === path.length - 1;
+        const isGo     = fieldIdx === 0;
+
+        // Highlight this field as step-through (not the last one)
+        if (!isLast) {
+            applyFieldClass(fieldIdx, "step-through", STEP_MS + PAUSE_MS);
+        }
+
+        // Flash Go field with gold pulse if passing
+        if (isGo && !isLast && passedGo) {
+            applyFieldClass(0, "pass-go", 600);
+        }
+
+        await new Promise(r => setTimeout(r, STEP_MS + PAUSE_MS));
+    }
+
+    // Remove start highlight
+    const startEl = getFieldEl(from);
+    if (startEl) startEl.classList.remove("step-start");
+
+    // Arrive animation
+    const arriveType = (lastEventType === "rent") ? "step-arrive-rent" : "step-arrive";
+    applyFieldClass(to, arriveType, 700);
+
+    // If passed Go, flash it with gold ring
+    if (passedGo) {
+        applyFieldClass(0, "pass-go", 700);
+    }
+
+    walkInProgress = false;
+}
+
+// ── Player card flash ─────────────────────────────────────────
+function flashPlayerCard(username, type) {
+    const playerList = document.getElementById("players-list");
+    if (!playerList) return;
+    const cards = playerList.querySelectorAll(".player-card");
+    cards.forEach(card => {
+        if (card.textContent.includes(username)) {
+            card.classList.remove("flash-green","flash-red","flash-shake","going-bankrupt");
+            void card.offsetWidth;
+            if (type === "bankrupt") {
+                card.classList.add("going-bankrupt");
+            } else {
+                card.classList.add("flash-" + type);
+                card.addEventListener("animationend", () => {
+                    card.classList.remove("flash-green","flash-red","flash-shake");
+                }, {once:true});
+            }
+        }
+    });
+}
+
+// ── Dice pasch flash ──────────────────────────────────────────
+function animatePasch() {
+    ["die1","die2"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove("pasch"); void el.offsetWidth; el.classList.add("pasch");
+        el.addEventListener("animationend", () => el.classList.remove("pasch"), {once:true});
+    });
+}
+
+// ── Status box turn anim ──────────────────────────────────────
+function animateTurnChange() {
+    const el = document.getElementById("status-box");
+    if (!el) return;
+    el.classList.remove("new-turn"); void el.offsetWidth; el.classList.add("new-turn");
+    el.addEventListener("animationend", () => el.classList.remove("new-turn"), {once:true});
+}
+
+// ── Free parking pot pop ─────────────────────────────────────
+function animateParkingPot(won) {
+    const el = document.querySelector(".parking-pot");
+    if (!el || !won) return;
+    el.classList.remove("winning"); void el.offsetWidth; el.classList.add("winning");
+    el.addEventListener("animationend", () => el.classList.remove("winning"), {once:true});
+}
+
+// ── Build pop ─────────────────────────────────────────────────
+function animateBuild(fieldIdx) {
+    const fieldEl = document.querySelector(`.field[data-fi="${fieldIdx}"]`);
+    if (!fieldEl) return;
+    const bld = fieldEl.querySelector(".field-buildings");
+    if (!bld) return;
+    bld.classList.remove("just-built"); void bld.offsetWidth; bld.classList.add("just-built");
+    bld.addEventListener("animationend", () => bld.classList.remove("just-built"), {once:true});
+}
+
+// ── Master diff → animate ────────────────────────────────────
+function runAnimations(newState, oldPositions, oldMoneys, oldEvent) {
+    if (!newState?.players) return;
+    const evt = newState.last_event;
+    const evtType = evt?.type;
+
+    newState.players.forEach(p => {
+        const oldPos = oldPositions[p.username];
+        const oldMoney = oldMoneys[p.username];
+
+        // Token moved? — use walk animation if last_move data is available
+        if (oldPos !== undefined && oldPos !== p.position) {
+            const mv = newState.last_move;
+            if (mv && mv.player === p.username && mv.from === oldPos) {
+                // Full field-by-field walk animation (async, doesn't block UI)
+                walkToken(p.username, mv.from, mv.to, mv.steps, mv.passed_go, evtType)
+                    .then(() => {
+                        // After walk completes, bounce the token at destination
+                        bounceToken(p.username);
+                    });
+            } else {
+                // Fallback: immediate pulse for card/goto moves
+                animateToken(p.username, false);
+                const fieldData = newState.board?.[p.position];
+                if (fieldData) {
+                    let pulseType = "land";
+                    if (evtType === "rent" && evt?.to !== p.username) pulseType = "rent";
+                    else if (p.position === 10 && p.in_jail) pulseType = "jail";
+                    pulseField(p.position, pulseType);
+                }
+            }
+        }
+
+        // Money changed?
+        if (oldMoney !== undefined && oldMoney !== p.money) {
+            const diff = p.money - oldMoney;
+            if (Math.abs(diff) >= 1) {
+                spawnMoneyFloatNearPlayer(p.username, diff);
+                flashPlayerCard(p.username, diff >= 0 ? "green" : "red");
+            }
+        }
+
+        // Just went bankrupt?
+        if (p.is_bankrupt && !oldState_bankruptMap[p.username]) {
+            flashPlayerCard(p.username, "bankrupt");
+        }
+    });
+
+    // Pasch?
+    if (newState.dice && newState.dice[0] === newState.dice[1]) {
+        animatePasch();
+    }
+
+    // Free parking win?
+    if (evtType === "free_parking" && evtType !== oldEvent) {
+        animateParkingPot(true);
+    }
+
+    // Build?
+    if (evtType === "build" && evt.field && evtType !== oldEvent) {
+        const fi = newState.board?.findIndex(f => f.name === evt.field);
+        if (fi !== -1) animateBuild(fi);
+    }
+
+    // Turn changed?
+    if (newState.current_player !== (window._prevCurrentPlayer)) {
+        animateTurnChange();
+        window._prevCurrentPlayer = newState.current_player;
+    }
+}
+
+// Track bankrupt state across renders
+let oldState_bankruptMap = {};
+
+// Hook into renderBoard to store data-fi on each field
+const _origRenderBoard = renderBoard;  // will be overwritten below
 
 // ─── Card Popup ──────────────────────────────────────────────
 const CARD_ICONS = {
@@ -662,6 +1045,7 @@ function renderBoard(s) {
             const el = document.createElement("div");
             el.style.gridColumn = col + 1;
             el.style.gridRow    = row + 1;
+            el.dataset.fi = fi;  // for animation targeting
 
             const isCorner = (fi === 0 || fi === 10 || fi === 20 || fi === 30);
             const edge = edgeClass(row, col);
@@ -1015,6 +1399,11 @@ function updateBtns(s) {
 
 // ─── Master UI update ─────────────────────────────────────────
 function updateUI(s) {
+    // Snapshot state BEFORE render for animation diffs
+    const snapPos    = {...prevPositions};
+    const snapMoney  = {...prevMoneys};
+    const snapEvent  = prevEventType;
+
     renderBoard(s);
     renderPlayers(s);
     updateBtns(s);
@@ -1025,6 +1414,17 @@ function updateUI(s) {
     checkRentOffer(s);
     checkTradeIncoming(s);
     renderChat(s);
+
+    // Run animations after DOM updated
+    runAnimations(s, snapPos, snapMoney, snapEvent);
+
+    // Update snapshots for next frame
+    (s.players||[]).forEach(p => {
+        prevPositions[p.username] = p.position;
+        prevMoneys[p.username]    = p.money;
+        oldState_bankruptMap[p.username] = p.is_bankrupt;
+    });
+    prevEventType = s.last_event?.type || null;
 }
 
 let winnerShown = false;
@@ -1079,20 +1479,85 @@ function checkWinner(s) {
 // ══════════════════════════════════════════════════════════════
 //  RENT CONFIRMATION
 // ══════════════════════════════════════════════════════════════
+function buildRentLiquidatePanel(me, rentAmount) {
+    const container = document.getElementById("rent-liquidate-list");
+    if (!container || !me) return;
+    const props = me.properties || [];
+    if (!props.length) { container.innerHTML=`<p style="font-size:11px;color:var(--text2);">Keine Grundstücke zum Liquidieren.</p>`; return; }
+    container.innerHTML="";
+    props.forEach(prop => {
+        const color = CMAP[prop.color_group]||"#888";
+        const row = document.createElement("div");
+        row.className = "rliq-prop";
+        row.innerHTML = `<div class="rliq-dot" style="background:${color}"></div><span class="rliq-name">${prop.name}</span>`;
+
+        // Sell house/hotel buttons
+        if (prop.houses > 0) {
+            const sh = document.createElement("button");
+            sh.className = "rliq-btn sell";
+            sh.textContent = prop.houses===5 ? `−🏨 +${prop.house_cost}€` : `−🏠 +${prop.house_cost}€`;
+            sh.disabled = prop.houses===5 ? !prop.can_sell_hotel : !prop.can_sell_house;
+            sh.onclick = async () => {
+                const type = prop.houses===5 ? "hotel" : "house";
+                const res = await fetch("/api/game/sell_building",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,type})});
+                if(!res.ok) { const d=await res.json(); toast("❌",d.error||"Fehler"); return; }
+                GS=await res.json(); updateUI(GS);
+            };
+            row.appendChild(sh);
+        }
+
+        // Mortgage button
+        if (!prop.is_mortgaged) {
+            const mv = prop.mortgage_value || Math.floor((prop.price||0)/2);
+            const mb = document.createElement("button");
+            mb.className = "rliq-btn mtg";
+            mb.textContent = `🏦 +${mv}€`;
+            mb.disabled = !prop.can_mortgage;
+            mb.onclick = async () => {
+                const res = await fetch("/api/game/mortgage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,action:"take"})});
+                if(!res.ok) { const d=await res.json(); toast("❌",d.error||"Fehler"); return; }
+                GS=await res.json(); updateUI(GS);
+            };
+            row.appendChild(mb);
+        } else {
+            const rv = prop.repay_value || Math.round((prop.mortgage_value||0)*1.1);
+            const ub = document.createElement("button");
+            ub.className = "rliq-btn";
+            ub.textContent = `✓ Ablösen −${rv}€`;
+            ub.disabled = !prop.can_unmortgage;
+            ub.onclick = async () => {
+                const res = await fetch("/api/game/mortgage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,action:"lift"})});
+                if(!res.ok) { const d=await res.json(); toast("❌",d.error||"Fehler"); return; }
+                GS=await res.json(); updateUI(GS);
+            };
+            row.appendChild(ub);
+        }
+        container.appendChild(row);
+    });
+}
+
 function checkRentPending(s) {
-    if(!s.pending_rent) return;
+    if(!s.pending_rent) {
+        // If rent was cleared, close the modal
+        if(document.getElementById("ov-rent").classList.contains("show")) {
+            closeOv("ov-rent");
+            pendingRent = null;
+        }
+        return;
+    }
     const rent = s.pending_rent;
     if(rent.payer !== ME) return;
-    if(document.getElementById("ov-rent").classList.contains("show")) return;
 
     pendingRent = rent;
     document.getElementById("rent-amount").textContent = `${rent.amount.toLocaleString("de-DE")} €`;
-    document.getElementById("rent-to").textContent = `an ${rent.creditor} — ${rent.field_name}`;
+    document.getElementById("rent-to").textContent = `an ${rent.creditor}${rent.field_name ? " — " + rent.field_name : ""}`;
+
     const me = s.players.find(p=>p.username===ME);
     const myMoney = me?.money||0;
     document.getElementById("rent-my-money").textContent = `${myMoney.toLocaleString("de-DE")} €`;
+
+    // Pay button logic
     const payBtn = document.getElementById("btn-pay");
-    // Compute total liquidation value
     const totalAssets = (me?.properties||[]).reduce((sum,p)=>{
         if(!p.is_mortgaged) sum += Math.floor((p.price||0)/2);
         if(p.houses===5) sum+=(p.house_cost||0);
@@ -1104,35 +1569,44 @@ function checkRentPending(s) {
         payBtn.disabled=false;
         payBtn.className="btn danger";
     } else if(totalAssets >= rent.amount) {
-        payBtn.textContent=`⚠️ Erst Gebäude/Hypotheken verwerten (Kasse: ${myMoney.toLocaleString("de-DE")} €)`;
+        payBtn.textContent=`⚠️ Erst liquidieren (Kasse: ${myMoney.toLocaleString("de-DE")} €)`;
         payBtn.disabled=true;
         payBtn.className="btn";
     } else {
-        payBtn.textContent=`💀 Bankrott unvermeidlich — trotzdem bestätigen`;
+        payBtn.textContent=`💀 Bankrott bestätigen`;
         payBtn.disabled=false;
         payBtn.className="btn danger";
     }
 
     // Property offer list
     const ol = document.getElementById("offer-list");
+    const prevSel = selOfferProp;
     ol.innerHTML=""; selOfferProp=null;
     document.getElementById("btn-offer-prop").disabled=true;
     const myProps = me?.properties||[];
-    if(!myProps.length) { ol.innerHTML=`<p style="color:var(--text2);font-size:12px;">Keine Grundstücke verfügbar.</p>`; }
+    if(!myProps.length) { ol.innerHTML=`<p style="color:var(--text2);font-size:11px;">Keine Grundstücke.</p>`; }
     else {
         myProps.forEach(prop => {
             const c=CMAP[prop.color_group]||"#888";
-            const item=document.createElement("div"); item.className="offer-item";
+            const item=document.createElement("div"); item.className="offer-item"+(prop.name===prevSel?" sel":"");
             item.innerHTML=`<div class="pdot" style="background:${c}"></div><span style="flex:1">${prop.name}</span><span class="pval">${prop.price} €</span>`;
+            if(prop.name===prevSel) { selOfferProp=prop.name; document.getElementById("btn-offer-prop").disabled=false; }
             item.onclick=()=>{
-                document.querySelectorAll(".offer-item").forEach(i=>i.classList.remove("sel"));
+                document.querySelectorAll("#offer-list .offer-item").forEach(i=>i.classList.remove("sel"));
                 item.classList.add("sel"); selOfferProp=prop.name;
                 document.getElementById("btn-offer-prop").disabled=false;
             };
             ol.appendChild(item);
         });
     }
-    openOv("ov-rent");
+
+    // Liquidation panel (always refreshed when modal is open)
+    buildRentLiquidatePanel(me, rent.amount);
+
+    // Only open overlay if not already open
+    if(!document.getElementById("ov-rent").classList.contains("show")) {
+        openOv("ov-rent");
+    }
 }
 
 async function payRent() {
@@ -1219,15 +1693,15 @@ function buildInitTrade(modal) {
                 <h3><div class="tdot" style="background:${PCOLORS[me?.color]||'#888'}"></div>Mein Angebot</h3>
                 <div class="tsec">Grundstücke</div>
                 <div id="t-my-props">${tpropsHTML(me?.properties||[],"my")}</div>
-                <div class="tsec">Geld</div>
+                <div class="tsec">💰 Ich zahle zusätzlich</div>
                 <div class="tmoney-row"><input class="tmoney" id="t-my-money" type="number" min="0" placeholder="0" oninput="updateTSum()"><span style="color:var(--text2);font-size:12px;">€</span></div>
             </div>
             <div class="tmid">⇄</div>
             <div class="tside">
-                <h3 id="t-their-hdr"><div class="tdot" style="background:#666"></div>Ich möchte</h3>
+                <h3 id="t-their-hdr"><div class="tdot" style="background:#666"></div>Ich verlange</h3>
                 <div class="tsec">Grundstücke</div>
                 <div id="t-their-props"><p style="font-size:11px;color:var(--text2);">Wähle Spieler.</p></div>
-                <div class="tsec">Geld</div>
+                <div class="tsec">💰 Ich verlange zusätzlich</div>
                 <div class="tmoney-row"><input class="tmoney" id="t-their-money" type="number" min="0" placeholder="0" oninput="updateTSum()"><span style="color:var(--text2);font-size:12px;">€</span></div>
             </div>
         </div>
@@ -1291,8 +1765,8 @@ function updateTSum() {
     if(myOffer.props.length) cons.push(`−${myOffer.props.length} Grundstück(e) abgeben`);
     if(theirOffer.money) pros.push(`+${theirOffer.money.toLocaleString("de-DE")} € erhalten`);
     if(myOffer.money) cons.push(`−${myOffer.money.toLocaleString("de-DE")} € zahlen`);
-    c.innerHTML=`<div class="tsum-row"><span>Dein Wert</span><span class="val">${myV.toLocaleString("de-DE")} €</span></div>
-        <div class="tsum-row"><span>${them?.username||"Gegenüber"}</span><span class="val">${thV.toLocaleString("de-DE")} €</span></div>
+    c.innerHTML=`<div class="tsum-row"><span>Du bietest (Wert)</span><span class="val">${myV.toLocaleString("de-DE")} €</span></div>
+        <div class="tsum-row"><span>${them?.username||"Gegenüber"} gibt (Wert)</span><span class="val">${thV.toLocaleString("de-DE")} €</span></div>
         <div class="tsum-row bal ${bc}"><span>Bilanz</span><span class="val">${bl}</span></div>
         <div class="pro-con">
             ${pros.map(p=>`<div class="pro">✓ ${p}</div>`).join("")}
@@ -1596,29 +2070,105 @@ async function joinGame() {
 //  GAME ACTIONS
 // ══════════════════════════════════════════════════════════════
 async function rollDice() {
-    document.getElementById("btn-roll").disabled=true;
-    const d1=document.getElementById("die1"),d2=document.getElementById("die2");
-    document.getElementById("dice-display").style.display="flex";
-    d1.classList.add("rolling"); d2.classList.add("rolling");
-    setTimeout(()=>{d1.classList.remove("rolling");d2.classList.remove("rolling");},300);
-    const res=await fetch("/api/game/roll",{method:"POST"});
-    if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");await fetchState(true);return;}
-    GS=await res.json(); updateUI(GS);
+    document.getElementById("btn-roll").disabled = true;
+    const d1 = document.getElementById("die1");
+    const d2 = document.getElementById("die2");
+    const dd = document.getElementById("dice-display");
+    dd.style.display = "flex";
+
+    // Multi-frame fake roll animation before the real result
+    const faces = ["⚀","⚁","⚂","⚃","⚄","⚅"];
+    let frame = 0;
+    const totalFrames = 10;
+    const rollInterval = setInterval(() => {
+        d1.textContent = faces[Math.floor(Math.random()*6)];
+        d2.textContent = faces[Math.floor(Math.random()*6)];
+        d1.classList.toggle("rolling", frame % 2 === 0);
+        d2.classList.toggle("rolling", frame % 2 === 1);
+        frame++;
+        if (frame >= totalFrames) clearInterval(rollInterval);
+    }, 60);
+
+    const res = await fetch("/api/game/roll", {method:"POST"});
+    clearInterval(rollInterval);
+    d1.classList.remove("rolling");
+    d2.classList.remove("rolling");
+
+    if(!res.ok){
+        const d = await res.json();
+        toast("❌", d.error||"Fehler");
+        await fetchState(true);
+        return;
+    }
+    GS = await res.json();
+
+    // Show final dice values with brief pop animation
+    if (GS.dice) {
+        const DICE_FACES = ["","⚀","⚁","⚂","⚃","⚄","⚅"];
+        d1.textContent = DICE_FACES[GS.dice[0]];
+        d2.textContent = DICE_FACES[GS.dice[1]];
+        d1.style.transform = "scale(1.2)";
+        d2.style.transform = "scale(1.2)";
+        setTimeout(() => { d1.style.transform=""; d2.style.transform=""; }, 200);
+
+        // Pasch flash handled inside runAnimations
+    }
+
+    // Short delay so player sees the dice before board animates
+    await new Promise(r => setTimeout(r, 250));
+    updateUI(GS);
+
+    // Lock buttons for the duration of the walking animation
+    if (GS.last_move) {
+        const steps = Math.abs(GS.last_move.steps || 0);
+        const STEP_MS = steps <= 6 ? 210 : steps <= 10 ? 160 : 120;
+        const walkDuration = steps * (STEP_MS + 60) + 900;
+        ["btn-roll","btn-end","btn-buy"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = true;
+        });
+        setTimeout(() => { if (GS) updateBtns(GS); }, walkDuration);
+    }
 }
 
 async function buyProperty() {
-    document.getElementById("btn-buy").disabled=true;
-    const res=await fetch("/api/game/buy",{method:"POST"});
-    if(!res.ok){toast("❌","Kauf nicht möglich");await fetchState(true);return;}
-    const d=await res.json();
-    if(d.success!==false){GS=d; updateUI(GS); toast("🏠",GS.status);}
-    else toast("❌","Kauf nicht möglich");
+    document.getElementById("btn-buy").disabled = true;
+    // Brief button press animation
+    const btn = document.getElementById("btn-buy");
+    btn.style.transform = "scale(.95)";
+    setTimeout(() => btn.style.transform = "", 150);
+
+    const res = await fetch("/api/game/buy", {method:"POST"});
+    if(!res.ok){ toast("❌","Kauf nicht möglich"); await fetchState(true); return; }
+    const d = await res.json();
+    if(d.success !== false){
+        GS = d;
+        // Pulse the bought field green before full render
+        const me = GS.players?.find(p=>p.username===ME);
+        if (me) pulseField(me.position, "buy");
+        await new Promise(r => setTimeout(r, 120));
+        updateUI(GS);
+        toast("🏠", GS.status);
+    } else {
+        toast("❌","Kauf nicht möglich");
+    }
 }
 
-async function buildProp(name,type) {
-    const res=await fetch("/api/game/build",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:name,type})});
-    if(!res.ok){const d=await res.json();toast("❌",d.error||"Bauen fehlgeschlagen");return;}
-    GS=await res.json(); updateUI(GS); toast("🏗️",GS.status);
+async function buildProp(name, type) {
+    const res = await fetch("/api/game/build", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({property:name, type})
+    });
+    if(!res.ok){ const d=await res.json(); toast("❌",d.error||"Bauen fehlgeschlagen"); return; }
+    GS = await res.json();
+    // Animate the build before render
+    const fi = GS.board?.findIndex(f => f.name === name);
+    if (fi !== -1) {
+        pulseField(fi, "buy");
+        await new Promise(r => setTimeout(r, 80));
+    }
+    updateUI(GS);
+    toast("🏗️", GS.status);
 }
 
 async function buyOutOfJail() {
@@ -1659,9 +2209,15 @@ async function sellProp(name, type) {
 }
 
 async function endTurn() {
-    const res=await fetch("/api/game/end_turn",{method:"POST"});
-    if(!res.ok){toast("❌","Fehler");return;}
-    GS=await res.json(); updateUI(GS);
+    const btn = document.getElementById("btn-end");
+    btn.style.transform = "scale(.95)";
+    setTimeout(() => btn.style.transform = "", 150);
+
+    const res = await fetch("/api/game/end_turn", {method:"POST"});
+    if(!res.ok){ const d=await res.json(); toast("❌", d.error||"Fehler"); return; }
+    GS = await res.json();
+    animateTurnChange();
+    updateUI(GS);
 }
 
 async function fetchState(silent=false) {

@@ -243,6 +243,10 @@ def roll_dice():
     err = _require_my_turn(game)
     if err:
         return err
+    if game.pending_rent:
+        return jsonify({"error": "Du musst zuerst die Miete bezahlen."}), 400
+    if game.pending_card:
+        return jsonify({"error": "Du musst zuerst die Karte bestätigen."}), 400
     game.roll_dice()
     return jsonify(game.to_dict())
 
@@ -397,6 +401,10 @@ def end_turn():
     err = _require_my_turn(game)
     if err:
         return err
+    if game.pending_rent:
+        return jsonify({"error": "Du musst zuerst die Miete bezahlen."}), 400
+    if game.pending_card:
+        return jsonify({"error": "Du musst zuerst die Karte bestätigen."}), 400
     game._next_player()
     game.dice_result = None
     game.can_buy = False
