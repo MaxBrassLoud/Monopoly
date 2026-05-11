@@ -190,10 +190,25 @@ class Game:
     # ── Players ──────────────────────────────────────────────
 
     def add_player(self, user_id, username, color) -> bool:
+        # Prüfen, ob der Spieler bereits als disconnected existiert
+        existing = next((p for p in self.players if p.user_id == user_id), None)
+        if existing and existing.is_disconnected:
+            # Reaktiviere den Spieler, setze seine neue Farbe
+            existing.is_disconnected = False
+            existing.is_bankrupt = False
+            existing.color = color
+            self.status_message = f"{username} ist zurückgekehrt!"
+            self._sys_chat(f"{username} ist dem Spiel wieder beigetreten! 🎉")
+            return True
+
+        # Maximale Spielerzahl prüfen
         if len(self.players) >= 6:
             return False
+        # Doppelten Eintritt verhindern
         if any(p.user_id == user_id for p in self.players):
             return False
+
+        # Neuen Spieler anlegen
         self.players.append(Player(user_id, username, color))
         self.status_message = f"{username} ist dem Spiel beigetreten!"
         self._sys_chat(f"{username} ist dem Spiel beigetreten! 🎉")
@@ -725,27 +740,33 @@ class Game:
         return {"success": False, "error": "Ungültige Aktion."}
 
     def _execute_trade(self, trade: dict) -> dict:
-        sender   = next((p for p in self.players if p.username == trade["from"]), None)
+        sender = next((p for p in self.players if p.username == trade["from"]), None)
         receiver = next((p for p in self.players if p.username == trade["to"]), None)
         if not sender or not receiver:
             self.active_trade = None
             return {"success": False, "error": "Spieler nicht gefunden."}
 
-        sender_money_needed   = trade.get("their_money", 0)   # receiver demands this from sender
-        receiver_money_needed = trade.get("my_money", 0)      # sender demands this from receiver
+        # Geldbeträge korrekt zuordnen:
+        sender_pays = trade.get("my_money", 0)  # Sender zahlt an Empfänger
+        receiver_pays = trade.get("their_money", 0)  # Empfänger zahlt an Sender
 
-        # ── Hard validation: reject if money can't be covered ──
-        if sender_money_needed > 0 and sender.money < sender_money_needed:
-            self.active_trade = None
-            return {"success": False, "error":
-                f"{sender.username} hat nicht genug Geld ({sender.money} € < {sender_money_needed} €). Handel abgebrochen."}
+        # Validierung und Transfer: Sender -> Empfänger
+        if sender_pays > 0:
+            if sender.money < sender_pays:
+                self.active_trade = None
+                return {"success": False, "error": f"{sender.username} hat nicht genug Geld."}
+            sender.money -= sender_pays
+            receiver.money += sender_pays
 
-        if receiver_money_needed > 0 and receiver.money < receiver_money_needed:
-            self.active_trade = None
-            return {"success": False, "error":
-                f"{receiver.username} hat nicht genug Geld ({receiver.money} € < {receiver_money_needed} €). Handel abgebrochen."}
+        # Validierung und Transfer: Empfänger -> Sender
+        if receiver_pays > 0:
+            if receiver.money < receiver_pays:
+                self.active_trade = None
+                return {"success": False, "error": f"{receiver.username} hat nicht genug Geld."}
+            receiver.money -= receiver_pays
+            sender.money += receiver_pays
 
-        # ── Transfer properties sender → receiver ──────────────
+        # Grundstücke transferieren (Sender -> Empfänger)
         for pn in trade.get("my_props", []):
             prop = next((f for f in self.board if f.name == pn), None)
             if prop and prop in sender.properties:
@@ -753,7 +774,7 @@ class Game:
                 prop.owner = receiver
                 receiver.properties.append(prop)
 
-        # ── Transfer properties receiver → sender ──────────────
+        # Grundstücke transferieren (Empfänger -> Sender)
         for pn in trade.get("their_props", []):
             prop = next((f for f in self.board if f.name == pn), None)
             if prop and prop in receiver.properties:
@@ -761,21 +782,12 @@ class Game:
                 prop.owner = sender
                 sender.properties.append(prop)
 
-        # ── Transfer money (now guaranteed sufficient) ──────────
-        if receiver_money_needed > 0:   # receiver pays sender
-            receiver.money -= receiver_money_needed
-            sender.money   += receiver_money_needed
-
-        if sender_money_needed > 0:     # sender pays receiver
-            sender.money   -= sender_money_needed
-            receiver.money += sender_money_needed
-
         self.active_trade = None
         self.status_message = f"Handel zwischen {sender.username} und {receiver.username} abgeschlossen!"
         self._sys_chat(f"✅ Handel zwischen {sender.username} und {receiver.username} erfolgreich abgeschlossen!")
         self.last_event = {"type": "trade", "a": sender.username, "b": receiver.username}
 
-        # Check if either party is now bankrupt
+        # Bankrott prüfen
         self._check_true_bankruptcy(sender)
         self._check_true_bankruptcy(receiver)
         return {"success": True}

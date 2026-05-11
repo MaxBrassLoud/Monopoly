@@ -295,12 +295,14 @@ def join_game():
     valid = ["red","green","yellow","blue","purple","orange","pink","teal","lime","white","brown","cyan"]
     if color not in valid:
         return jsonify({"error": f"Ungültige Farbe."}), 400
-    if any(p.color == color for p in game.players):
+    # Prüfe, ob die Farbe bereits von einem *aktiven* (nicht disconnected) Spieler verwendet wird
+    if any(p.color == color and not p.is_disconnected for p in game.players):
         return jsonify({"error": f"Die Farbe '{color}' ist bereits vergeben. Wähle eine andere."}), 409
-    if any(p.user_id == session["user_id"] for p in game.players):
-        return jsonify({"error": "Du bist bereits im Spiel"}), 409
+    # Spieler hinzufügen oder reaktivieren (die add_player Methode erlaubt nun beides)
     success = game.add_player(session["user_id"], session["username"], color)
-    return jsonify({"success": success, **game.to_dict()})
+    if not success:
+        return jsonify({"error": "Beitreten fehlgeschlagen (max. 6 Spieler oder bereits drin)."}), 400
+    return jsonify(game.to_dict())
 
 
 @app.route('/api/game/mortgage', methods=['POST'])

@@ -8,7 +8,7 @@
 - Hypotek aufnehmen (frontend done awaiting Backend implementation) √
 - UI verbesern bis zu 6 Mitspiler ausbauen √
 - Strafen und Mieten System verbessern √
-- 3x Pasch Gefängnis
+- 3x Pasch Gefängnis √
 - Spieler größer machen für bessere übersicht mit Benutzernamen drüber
 - Chancen karten animiert aufploppen lassen √
 - Anzeigefehler Handeln √
@@ -19,3 +19,6 @@
 - Handelsystem funktoiniert bei zu wenig geld auf dem Konto
 - Raum ersteller soll mitspieler kicken können
 - bei verlassen spieler aus runde entfernen √
+- Bugs beim überweisen √
+- Fehler mit Joinen
+- Wenn Häauser verkauft werden Liste der zu kaufenden Häuser aktualisieren

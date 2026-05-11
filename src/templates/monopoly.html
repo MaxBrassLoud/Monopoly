@@ -2246,18 +2246,19 @@ async function kickPlayer(username) {
     GS = await res.json(); updateUI(GS);
     toast("🚫", `${username} wurde entfernt.`);
 }
-
 // ── Init ─────────────────────────────────────────────────────
 async function init() {
-    // Check if we are the host
+    // Prüfen, ob wir Host sind
     try {
         const ri = await fetch("/api/room/info");
         if (ri.ok) { const rd = await ri.json(); IS_HOST = rd.is_host || false; }
     } catch(e) {}
 
     await fetchState(true);
-    // If player not yet in game, show join modal automatically
-    if (GS && !GS.players.find(p => p.username === ME)) {
+
+    // Wenn Spieler nicht existiert ODER als disconnected markiert ist → Join-Modal zeigen
+    const me = GS?.players?.find(p => p.username === ME);
+    if (GS && (!me || me.is_disconnected)) {
         showJoinModal();
     }
 }
