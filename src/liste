@@ -16,9 +16,11 @@
 - Anzeige woher man kommt?
 - Straßen kaufen im Menü √
 - Gefängnis Frei Karte implementieren und Anzeigen irgendwo? √
-- Handelsystem funktoiniert bei zu wenig geld auf dem Konto
-- Raum ersteller soll mitspieler kicken können
+- Handelsystem funktoiniert bei zu wenig geld auf dem Konto √
+- Raum ersteller soll mitspieler kicken können √
 - bei verlassen spieler aus runde entfernen √
 - Bugs beim überweisen √
-- Fehler mit Joinen
-- Wenn Häauser verkauft werden Liste der zu kaufenden Häuser aktualisieren
+- Fehler mit Joinen √
+- Wenn Häauser verkauft werden Liste der zu kaufenden Häuser aktualisieren √
+
+- Farben auf Straße

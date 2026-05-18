@@ -77,10 +77,10 @@ def logout():
     return redirect("/login")
 
 
-@app.route('/monopoly')
+@app.route('/dice-deals')
 @login_required
-def monopoly():
-    return render_template("monopoly.html", room_code=get_room_code() or "")
+def dice_deals():
+    return render_template("dice-deals.html", room_code=get_room_code() or "")
 
 
 # ── Auth ──────────────────────────────────────────────────────
@@ -219,7 +219,6 @@ def game_state():
     game, _ = get_current_game()
     if not game:
         return jsonify({"error": "Kein Raum beigetreten"}), 400
-    # Auto-add player if viewing
     return jsonify(game.to_dict())
 
 
@@ -245,6 +244,8 @@ def roll_dice():
         return err
     if game.pending_rent:
         return jsonify({"error": "Du musst zuerst die Miete bezahlen."}), 400
+    if game.pending_tax:
+        return jsonify({"error": "Du musst zuerst die Steuer bezahlen."}), 400
     if game.pending_card:
         return jsonify({"error": "Du musst zuerst die Karte bestätigen."}), 400
     game.roll_dice()
@@ -295,10 +296,8 @@ def join_game():
     valid = ["red","green","yellow","blue","purple","orange","pink","teal","lime","white","brown","cyan"]
     if color not in valid:
         return jsonify({"error": f"Ungültige Farbe."}), 400
-    # Prüfe, ob die Farbe bereits von einem *aktiven* (nicht disconnected) Spieler verwendet wird
     if any(p.color == color and not p.is_disconnected for p in game.players):
         return jsonify({"error": f"Die Farbe '{color}' ist bereits vergeben. Wähle eine andere."}), 409
-    # Spieler hinzufügen oder reaktivieren (die add_player Methode erlaubt nun beides)
     success = game.add_player(session["user_id"], session["username"], color)
     if not success:
         return jsonify({"error": "Beitreten fehlgeschlagen (max. 6 Spieler oder bereits drin)."}), 400
@@ -313,7 +312,7 @@ def mortgage():
         return jsonify({"error": "Kein Raum"}), 400
     data = request.get_json(silent=True) or {}
     prop = data.get("property", "").strip()
-    action = data.get("action", "take")  # "take" or "lift"
+    action = data.get("action", "take")
     if not prop:
         return jsonify({"error": "Grundstücksname fehlt"}), 400
     if action == "take":
@@ -405,6 +404,8 @@ def end_turn():
         return err
     if game.pending_rent:
         return jsonify({"error": "Du musst zuerst die Miete bezahlen."}), 400
+    if game.pending_tax:
+        return jsonify({"error": "Du musst zuerst die Steuer bezahlen."}), 400
     if game.pending_card:
         return jsonify({"error": "Du musst zuerst die Karte bestätigen."}), 400
     game._next_player()
@@ -452,6 +453,20 @@ def respond_rent_offer():
     data = request.get_json(silent=True) or {}
     accept = data.get("accept", False)
     result = game.respond_rent_offer(session["username"], accept)
+    if not result.get("success"):
+        return jsonify({"error": result.get("error", "Fehler")}), 400
+    return jsonify(game.to_dict())
+
+
+# ── Tax Confirmation (NEU) ────────────────────────────────────
+
+@app.route('/api/game/pay_tax', methods=['POST'])
+@login_required
+def pay_tax():
+    game, _ = get_current_game()
+    if not game:
+        return jsonify({"error": "Kein Raum"}), 400
+    result = game.confirm_tax_payment(session["username"])
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Fehler")}), 400
     return jsonify(game.to_dict())

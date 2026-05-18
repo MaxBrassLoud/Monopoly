@@ -108,45 +108,45 @@ def _create_board() -> List[Field]:
     hp = {"brown": 50, "lightblue": 50, "pink": 100, "orange": 100, "red": 150, "yellow": 150, "green": 200, "darkblue": 200}
     return [
         Field("Los", "special"),
-        Field("Badstraße", "property", 60, [2,10,30,90,160,250], "brown", 30, hp["brown"]),
+        Field("Schmiedestraße", "property", 60, [2,10,30,90,160,250], "brown", 30, hp["brown"]),
         Field("Gemeinschaft", "community"),
-        Field("Turmstraße", "property", 60, [4,20,60,180,320,450], "brown", 30, hp["brown"]),
+        Field("Töpfergasse", "property", 60, [4,20,60,180,320,450], "brown", 30, hp["brown"]),
         Field("Einkommensteuer", "tax", 0, [200]),
         Field("Südbahnhof", "station", 200, [25,50,100,200], "station", 100),
-        Field("Chausseestraße", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
+        Field("Birkenallee", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
         Field("Chance", "chance"),
-        Field("Elisenstraße", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
-        Field("Poststraße", "property", 120, [8,40,100,300,450,600], "lightblue", 60, hp["lightblue"]),
+        Field("Ahornweg", "property", 100, [6,30,90,270,400,550], "lightblue", 50, hp["lightblue"]),
+        Field("Seeblickweg", "property", 120, [8,40,100,300,450,600], "lightblue", 60, hp["lightblue"]),
         Field("Gefängnis / Besuch", "special"),
-        Field("Seestraße", "property", 140, [10,50,150,450,625,750], "pink", 70, hp["pink"]),
+        Field("Viktoriastraße", "property", 140, [10,50,150,450,625,750], "pink", 70, hp["pink"]),
         Field("Elektrizitätswerk", "utility", 150, [0], "utility", 75),
         Field("Christian Straße", "property", 140, [10,50,150,450,625,750], "pink", 70, hp["pink"]),
-        Field("Neuestraße", "property", 160, [12,60,180,500,700,900], "pink", 80, hp["pink"]),
+        Field("Brunnenring", "property", 160, [12,60,180,500,700,900], "pink", 80, hp["pink"]),
         Field("Westbahnhof", "station", 200, [25,50,100,200], "station", 100),
-        Field("Münchnerstraße", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
+        Field("Handelsallee", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
         Field("Gemeinschaft", "community"),
-        Field("Wienerstraße", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
-        Field("Berlinerstraße", "property", 200, [16,80,220,600,800,1000], "orange", 100, hp["orange"]),
+        Field("Industrieplatz", "property", 180, [14,70,200,550,750,950], "orange", 90, hp["orange"]),
+        Field("Skyline Avenue", "property", 200, [16,80,220,600,800,1000], "orange", 100, hp["orange"]),
         Field("Frei Parken", "special"),
-        Field("Theaterstraße", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
+        Field("Rubinweg", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
         Field("Chance", "chance"),
-        Field("Museumsstraße", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
-        Field("Opernplatz", "property", 240, [20,100,300,750,925,1100], "red", 120, hp["red"]),
+        Field("Kronenweg", "property", 220, [18,90,250,700,875,1050], "red", 110, hp["red"]),
+        Field("Kaiserpromenade", "property", 240, [20,100,300,750,925,1100], "red", 120, hp["red"]),
         Field("Nordbahnhof", "station", 200, [25,50,100,200], "station", 100),
-        Field("Lessingstraße", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
-        Field("Schillerstraße", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
+        Field("Celestia Park", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
+        Field("Opal Gardens", "property", 260, [22,110,330,800,975,1150], "yellow", 130, hp["yellow"]),
         Field("Wasserwerk", "utility", 150, [0], "utility", 75),
-        Field("Goethestraße", "property", 280, [24,120,360,850,1025,1200], "yellow", 140, hp["yellow"]),
+        Field("Panorama Gardens", "property", 280, [24,120,360,850,1025,1200], "yellow", 140, hp["yellow"]),
         Field("Gehe ins Gefängnis", "special"),
-        Field("Rathausplatz", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
-        Field("Havelstraße", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
+        Field("Eden Heights", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
+        Field("Maximilian Straße", "property", 300, [26,130,390,900,1100,1275], "green", 150, hp["green"]),
         Field("Gemeinschaft", "community"),
-        Field("Potsdamer Platz", "property", 320, [28,150,450,1000,1200,1400], "green", 160, hp["green"]),
+        Field("Eternity Gardens", "property", 320, [28,150,450,1000,1200,1400], "green", 160, hp["green"]),
         Field("Hauptbahnhof", "station", 200, [25,50,100,200], "station", 100),
         Field("Chance", "chance"),
-        Field("Parkstraße", "property", 350, [35,175,500,1100,1300,1500], "darkblue", 175, hp["darkblue"]),
+        Field("Royal Boulevard", "property", 350, [35,175,500,1100,1300,1500], "darkblue", 175, hp["darkblue"]),
         Field("Zusatzsteuer", "tax", 0, [100]),
-        Field("Schlossallee", "property", 400, [50,200,600,1400,1700,2000], "darkblue", 200, hp["darkblue"]),
+        Field("Bernsteinallee", "property", 400, [50,200,600,1400,1700,2000], "darkblue", 200, hp["darkblue"]),
     ]
 
 
@@ -170,6 +170,9 @@ class Game:
         # Rent confirmation
         self.pending_rent: Optional[dict] = None      # awaiting payer confirmation
         self.incoming_rent_offer: Optional[dict] = None  # creditor sees this
+
+        # Tax confirmation (NEU)
+        self.pending_tax: Optional[dict] = None
 
         # Trade
         self.active_trade: Optional[dict] = None       # current open trade offer
@@ -289,10 +292,15 @@ class Game:
 
         if field.field_type == "tax":
             amount = field.rent[0]
-            player.money -= amount
-            self.free_parking_pot += amount
-            self.status_message = f"{player.username} zahlt {amount} € Steuer. Topf: {self.free_parking_pot} €"
+            # ---- NEU: Keine sofortige Abbuchung, sondern Pending-Tax ----
+            self.pending_tax = {
+                "payer": player.username,
+                "amount": amount,
+                "field_name": field.name,
+            }
+            self.status_message = f"{player.username} muss {amount} € Steuer zahlen. ({field.name})"
             self.last_event = {"type": "tax", "amount": amount}
+            self._sys_chat(f"🏛️ {player.username} muss {amount} € Steuer zahlen")
             return
 
         if field.field_type == "chance":
@@ -660,6 +668,45 @@ class Game:
             }
         return {"success": True}
 
+    # ── Tax Confirmation (NEU) ───────────────────────────────
+
+    def confirm_tax_payment(self, payer_username: str) -> dict:
+        if not self.pending_tax:
+            return {"success": False, "error": "Keine ausstehende Steuer."}
+        if self.pending_tax["payer"] != payer_username:
+            return {"success": False, "error": "Nicht deine Steuer."}
+        payer = next((p for p in self.players if p.username == payer_username), None)
+        if not payer:
+            return {"success": False, "error": "Spieler nicht gefunden."}
+        amount = self.pending_tax["amount"]
+        self.pending_tax = None
+
+        if payer.money >= amount:
+            payer.money -= amount
+            self.free_parking_pot += amount
+            self.status_message = f"{payer_username} hat {amount} € Steuer gezahlt."
+            self._sys_chat(f"🏛️ {payer_username} zahlt {amount} € Steuer")
+        else:
+            total = self._total_asset_value(payer)
+            if total < amount:
+                # Kann nicht zahlen, selbst nach Liquidation -> bankrott
+                self.free_parking_pot += payer.money  # Nur vorhandenes Geld geht in den Topf
+                payer.money = 0
+                self.status_message = f"{payer_username} kann die Steuer nicht zahlen und ist bankrott!"
+                self._sys_chat(f"💀 {payer_username} kann {amount} € Steuer nicht decken (Vermögen: {total} €)")
+                self._declare_bankrupt(payer)
+            else:
+                # Hat Vermögen, aber nicht flüssig genug -> zum Liquidieren zwingen
+                self.pending_tax = {
+                    "payer": payer_username,
+                    "amount": amount,
+                    "field_name": self.pending_tax.get("field_name", "Steuer"),
+                }
+                return {"success": False, "error":
+                    f"Nicht genug Bargeld ({payer.money} €). "
+                    f"Verkaufe zuerst Häuser oder nimm eine Hypothek auf (Gesamtvermögen: {total} €)."}
+        return {"success": True}
+
     # ── Trade ─────────────────────────────────────────────────
 
     def send_trade(self, from_user, to_user, my_props, my_money, their_props, their_money) -> dict:
@@ -766,7 +813,7 @@ class Game:
             receiver.money -= receiver_pays
             sender.money += receiver_pays
 
-        # Grundstücke transferieren (Sender -> Empfänger)
+        # Grundstücke transferieren (Sender -> Empfänger) – Hypotheken bleiben bestehen
         for pn in trade.get("my_props", []):
             prop = next((f for f in self.board if f.name == pn), None)
             if prop and prop in sender.properties:
@@ -791,7 +838,6 @@ class Game:
         self._check_true_bankruptcy(sender)
         self._check_true_bankruptcy(receiver)
         return {"success": True}
-
 
     # ── Mortgage ─────────────────────────────────────────────
 
@@ -1004,6 +1050,7 @@ class Game:
             "last_event": self.last_event,
             "pending_rent": self.pending_rent,
             "incoming_rent_offer": self.incoming_rent_offer,
+            "pending_tax": self.pending_tax,          # NEU
             "incoming_trade": self.active_trade,
             "last_move": self.last_move,
             "host_username": self.host_username,
