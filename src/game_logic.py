@@ -2,8 +2,6 @@ import random
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-
-# Farbreihenfolge aufsteigend nach Wert
 GROUP_ORDER = ["brown","lightblue","pink","orange","red","yellow","green","darkblue","station","utility"]
 
 CHANCE_CARDS = [
@@ -167,51 +165,45 @@ class Game:
         self.last_event = None
         self.last_move: Optional[dict] = None
 
-        # Rent confirmation
-        self.pending_rent: Optional[dict] = None      # awaiting payer confirmation
-        self.incoming_rent_offer: Optional[dict] = None  # creditor sees this
 
-        # Tax confirmation (NEU)
+        self.pending_rent: Optional[dict] = None
+        self.incoming_rent_offer: Optional[dict] = None
+
+
         self.pending_tax: Optional[dict] = None
 
-        # Trade
-        self.active_trade: Optional[dict] = None       # current open trade offer
 
-        # Frei Parken Topf
+        self.active_trade: Optional[dict] = None
+
+
         self.free_parking_pot: int = 0
 
-        # Karten-Popup (muss vom Spieler bestätigt werden)
-        self.pending_card: Optional[dict] = None  # {player, card_type, text, action, value}
 
-        # Chat
+        self.pending_card: Optional[dict] = None
+
+
         self.chat_messages: List[dict] = []
 
-        # Host & disconnect tracking
+
         self.host_id: str = ""
         self.host_username: str = ""
 
-    # ── Players ──────────────────────────────────────────────
+
 
     def add_player(self, user_id, username, color) -> bool:
-        # Prüfen, ob der Spieler bereits als disconnected existiert
         existing = next((p for p in self.players if p.user_id == user_id), None)
         if existing and existing.is_disconnected:
-            # Reaktiviere den Spieler, setze seine neue Farbe
             existing.is_disconnected = False
             existing.is_bankrupt = False
             existing.color = color
             self.status_message = f"{username} ist zurückgekehrt!"
             self._sys_chat(f"{username} ist dem Spiel wieder beigetreten! 🎉")
             return True
-
-        # Maximale Spielerzahl prüfen
         if len(self.players) >= 6:
             return False
-        # Doppelten Eintritt verhindern
         if any(p.user_id == user_id for p in self.players):
             return False
 
-        # Neuen Spieler anlegen
         self.players.append(Player(user_id, username, color))
         self.status_message = f"{username} ist dem Spiel beigetreten!"
         self._sys_chat(f"{username} ist dem Spiel beigetreten! 🎉")
@@ -220,7 +212,7 @@ class Game:
     def _sys_chat(self, text: str):
         self.chat_messages.append({"type": "system", "text": text})
 
-    # ── Dice ─────────────────────────────────────────────────
+
 
     def roll_dice(self):
         if self.turn_phase != "roll":
@@ -267,7 +259,7 @@ class Game:
     def _move_player(self, player, steps):
         old_pos = player.position
         player.position = (player.position + steps) % 40
-        # Store movement info so frontend can animate step-by-step
+
         self.last_move = {
             "player": player.username,
             "from": old_pos,
@@ -292,7 +284,6 @@ class Game:
 
         if field.field_type == "tax":
             amount = field.rent[0]
-            # ---- NEU: Keine sofortige Abbuchung, sondern Pending-Tax ----
             self.pending_tax = {
                 "payer": player.username,
                 "amount": amount,
@@ -315,7 +306,7 @@ class Game:
             self._apply_card(player, card)
             return
 
-        if player.position == 20:  # Frei Parken
+        if player.position == 20:
             pot = self.free_parking_pot
             if pot > 0:
                 player.money += pot
@@ -340,7 +331,7 @@ class Game:
                 else:
                     rent = field.get_rent(self.board, field.owner)
 
-                # ── Rent confirmation: don't auto-deduct, set pending ──
+
                 rent = min(rent, player.money + sum(f.price for f in player.properties))
                 self.pending_rent = {
                     "payer": player.username,
@@ -359,11 +350,8 @@ class Game:
             self.status_message = f"{player.username} landet auf {field.name}."
 
     def _apply_card(self, player: "Player", card: dict):
-        """Speichert die Karte als Popup — Spieler bestätigt via confirm_card()."""
         self.last_event = {"type": "card", "text": card["text"]}
         self.status_message = f"{player.username} zieht eine Karte…"
-        # Determine card type by checking which deck it came from (community vs chance)
-        # We tag it during draw; use field position as proxy
         field = self.board[player.position]
         card_type = "community" if field.field_type == "community" else "chance"
         self.pending_card = {
@@ -375,7 +363,6 @@ class Game:
         }
 
     def confirm_card(self, username: str) -> dict:
-        """Bestätigt die angezeigte Karte und führt die Aktion aus."""
         if not self.pending_card:
             return {"success": False, "error": "Keine Karte ausstehend."}
         if self.pending_card["player"] != username:
@@ -389,7 +376,6 @@ class Game:
         return {"success": True}
 
     def _execute_card(self, player: "Player", card: dict):
-        """Führt die Kartenaktion tatsächlich aus."""
         action = card["action"]
         value  = card["value"]
         self.status_message = f"Karte: {card['text']}"
@@ -431,31 +417,26 @@ class Game:
         self._sys_chat(f"⛓️ {player.username} wurde ins Gefängnis geschickt!")
 
     def _total_asset_value(self, player: "Player") -> int:
-        """Berechnet Gesamtwert: Geld + Gebäude-Rückwert + Hypothekenwert aller Grundstücke."""
         total = player.money
         for prop in player.properties:
             if not prop.is_mortgaged:
-                total += prop.price // 2   # Hypothekenwert
-            # Gebäude-Rückwert
+                total += prop.price // 2
             if prop.houses == 5:
-                total += prop.house_cost   # Hotel
+                total += prop.house_cost
             else:
                 total += prop.houses * prop.house_cost
         return total
 
     def _check_bankruptcy(self, player: "Player"):
-        """Legacy-kompatibel: prüft ob Spieler nach Kartenabzug bankrott ist."""
         self._check_true_bankruptcy(player)
 
     def _check_true_bankruptcy(self, player: "Player"):
-        """Bankrott wenn Gesamtvermögen (Geld + Hypotheken + Gebäude-Rückwert) ≤ 0."""
         if player.is_bankrupt:
             return
         if self._total_asset_value(player) <= 0:
             self._declare_bankrupt(player)
 
     def _declare_bankrupt(self, player: "Player"):
-        """Erklärt einen Spieler als bankrott und prüft auf Spielende."""
         player.is_bankrupt = True
         for prop in player.properties:
             prop.owner = None
@@ -468,7 +449,6 @@ class Game:
         self._check_winner()
 
     def _check_winner(self):
-        """Prüft ob nur noch ein Spieler im Spiel ist → Gewinner."""
         active = [p for p in self.players if not p.is_bankrupt and not p.is_disconnected]
         if len(active) == 1:
             winner = active[0]
@@ -480,8 +460,6 @@ class Game:
         elif len(active) == 0:
             self.status_message = "Kein Gewinner — alle ausgeschieden."
             self.last_event = {"type": "draw"}
-
-    # ── Buy ──────────────────────────────────────────────────
 
     def buy_property(self) -> bool:
         player = self.players[self.current_player_index]
@@ -498,8 +476,6 @@ class Game:
         self.status_message = f"{player.username} kauft {field.name} für {field.price} €."
         self._sys_chat(f"🏠 {player.username} kauft {field.name} für {field.price} €")
         return True
-
-    # ── Build ────────────────────────────────────────────────
 
     def build(self, property_name, build_type) -> dict:
         player = self.players[self.current_player_index]
@@ -541,7 +517,6 @@ class Game:
         return {"success": True}
 
     def sell_building(self, property_name: str, sell_type: str, username: str) -> dict:
-        """Verkauft ein Haus oder Hotel zum Originalpreis."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
@@ -578,8 +553,6 @@ class Game:
             return {"success": False, "error": "Ungültige Aktion."}
         return {"success": True}
 
-    # ── Rent Confirmation ────────────────────────────────────
-
     def confirm_rent_payment(self, payer_username: str) -> dict:
         if not self.pending_rent:
             return {"success": False, "error": "Keine ausstehende Miete."}
@@ -595,16 +568,13 @@ class Game:
         self.pending_rent = None
 
         if payer.money >= amount:
-            # Normal payment
             payer.money    -= amount
             creditor.money += amount
             self.status_message = f"{payer_username} zahlt {amount} € Miete an {creditor.username}."
             self._sys_chat(f"💸 {payer_username} zahlt {amount} € Miete an {creditor.username}")
         else:
-            # Can't pay in cash — check if total assets cover it
             total = self._total_asset_value(payer)
             if total < amount:
-                # Truly insolvent: pay what's possible, declare bankrupt
                 partial = max(0, payer.money)
                 payer.money     = 0
                 creditor.money += partial
@@ -612,7 +582,6 @@ class Game:
                 self._sys_chat(f"💀 {payer_username} kann {amount} € Miete nicht decken (Vermögen: {total} €)")
                 self._declare_bankrupt(payer)
             else:
-                # Has assets but not cash — force them to liquidate first
                 return {"success": False, "error":
                     f"Nicht genug Bargeld ({payer.money} €). "
                     f"Verkaufe zuerst Häuser oder nimm eine Hypothek auf (Gesamtvermögen: {total} €)."}
@@ -659,7 +628,6 @@ class Game:
                 self._sys_chat(f"🤝 {creditor_username} akzeptiert '{prop.name}' statt Miete von {payer.username}")
         else:
             self.status_message = f"{creditor_username} lehnt das Grundstücksangebot ab. Miete muss gezahlt werden."
-            # Re-set pending rent so payer must pay cash
             self.pending_rent = {
                 "payer": offer["from"],
                 "creditor": creditor_username,
@@ -667,8 +635,6 @@ class Game:
                 "field_name": "",
             }
         return {"success": True}
-
-    # ── Tax Confirmation (NEU) ───────────────────────────────
 
     def confirm_tax_payment(self, payer_username: str) -> dict:
         if not self.pending_tax:
@@ -689,14 +655,12 @@ class Game:
         else:
             total = self._total_asset_value(payer)
             if total < amount:
-                # Kann nicht zahlen, selbst nach Liquidation -> bankrott
-                self.free_parking_pot += payer.money  # Nur vorhandenes Geld geht in den Topf
+                self.free_parking_pot += payer.money
                 payer.money = 0
                 self.status_message = f"{payer_username} kann die Steuer nicht zahlen und ist bankrott!"
                 self._sys_chat(f"💀 {payer_username} kann {amount} € Steuer nicht decken (Vermögen: {total} €)")
                 self._declare_bankrupt(payer)
             else:
-                # Hat Vermögen, aber nicht flüssig genug -> zum Liquidieren zwingen
                 self.pending_tax = {
                     "payer": payer_username,
                     "amount": amount,
@@ -707,8 +671,6 @@ class Game:
                     f"Verkaufe zuerst Häuser oder nimm eine Hypothek auf (Gesamtvermögen: {total} €)."}
         return {"success": True}
 
-    # ── Trade ─────────────────────────────────────────────────
-
     def send_trade(self, from_user, to_user, my_props, my_money, their_props, their_money) -> dict:
         sender = next((p for p in self.players if p.username == from_user), None)
         receiver = next((p for p in self.players if p.username == to_user), None)
@@ -716,11 +678,9 @@ class Game:
             return {"success": False, "error": "Spieler nicht gefunden."}
         if self.active_trade:
             return {"success": False, "error": "Es läuft bereits ein Handel."}
-        # Validate that sender owns the props they offer
         for pn in my_props:
             if not any(f.name == pn for f in sender.properties):
                 return {"success": False, "error": f"Du besitzt '{pn}' nicht."}
-        # Validate receiver owns the props being requested
         for pn in their_props:
             if not any(f.name == pn for f in receiver.properties):
                 return {"success": False, "error": f"{to_user} besitzt '{pn}' nicht."}
@@ -732,9 +692,9 @@ class Game:
         self.active_trade = {
             "from": from_user,
             "to": to_user,
-            "my_props": my_props,      # what sender offers
+            "my_props": my_props,
             "my_money": my_money,
-            "their_props": their_props,  # what sender requests from receiver
+            "their_props": their_props,
             "their_money": their_money,
             "history": [{"by": from_user, "action": f"Angebot gesendet: {len(my_props)} Grundstück(e) + {my_money}€ gegen {len(their_props)} Grundstück(e) + {their_money}€"}],
         }
@@ -760,7 +720,6 @@ class Game:
         if action == "counter":
             if not counter:
                 return {"success": False, "error": "Kein Gegenangebot angegeben."}
-            # Swap perspective for counter: now responder is the "from"
             new_trade = {
                 "from": responder,
                 "to": trade["from"],
@@ -770,7 +729,6 @@ class Game:
                 "their_money": counter.get("their_money", 0),
                 "history": trade["history"] + [{"by": responder, "action": f"Gegenangebot: {len(counter.get('my_props',[]))} Grundstück(e) + {counter.get('my_money',0)}€ gegen {len(counter.get('their_props',[]))} Grundstück(e) + {counter.get('their_money',0)}€"}],
             }
-            # Validate counter
             sender = next((p for p in self.players if p.username == responder), None)
             orig_sender = next((p for p in self.players if p.username == trade["from"]), None)
             if sender and orig_sender:
@@ -793,11 +751,9 @@ class Game:
             self.active_trade = None
             return {"success": False, "error": "Spieler nicht gefunden."}
 
-        # Geldbeträge korrekt zuordnen:
-        sender_pays = trade.get("my_money", 0)  # Sender zahlt an Empfänger
-        receiver_pays = trade.get("their_money", 0)  # Empfänger zahlt an Sender
+        sender_pays = trade.get("my_money", 0)
+        receiver_pays = trade.get("their_money", 0)
 
-        # Validierung und Transfer: Sender -> Empfänger
         if sender_pays > 0:
             if sender.money < sender_pays:
                 self.active_trade = None
@@ -805,7 +761,6 @@ class Game:
             sender.money -= sender_pays
             receiver.money += sender_pays
 
-        # Validierung und Transfer: Empfänger -> Sender
         if receiver_pays > 0:
             if receiver.money < receiver_pays:
                 self.active_trade = None
@@ -813,7 +768,6 @@ class Game:
             receiver.money -= receiver_pays
             sender.money += receiver_pays
 
-        # Grundstücke transferieren (Sender -> Empfänger) – Hypotheken bleiben bestehen
         for pn in trade.get("my_props", []):
             prop = next((f for f in self.board if f.name == pn), None)
             if prop and prop in sender.properties:
@@ -821,7 +775,6 @@ class Game:
                 prop.owner = receiver
                 receiver.properties.append(prop)
 
-        # Grundstücke transferieren (Empfänger -> Sender)
         for pn in trade.get("their_props", []):
             prop = next((f for f in self.board if f.name == pn), None)
             if prop and prop in receiver.properties:
@@ -834,15 +787,11 @@ class Game:
         self._sys_chat(f"✅ Handel zwischen {sender.username} und {receiver.username} erfolgreich abgeschlossen!")
         self.last_event = {"type": "trade", "a": sender.username, "b": receiver.username}
 
-        # Bankrott prüfen
         self._check_true_bankruptcy(sender)
         self._check_true_bankruptcy(receiver)
         return {"success": True}
 
-    # ── Mortgage ─────────────────────────────────────────────
-
     def take_mortgage(self, property_name: str, username: str) -> dict:
-        """Nimmt eine Hypothek auf ein Grundstück auf (50% des Kaufpreises)."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
@@ -862,7 +811,6 @@ class Game:
         return {"success": True}
 
     def lift_mortgage(self, property_name: str, username: str) -> dict:
-        """Löst eine Hypothek ab (Rückzahlung + 10% Zins)."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
@@ -872,7 +820,7 @@ class Game:
         if not field.is_mortgaged:
             return {"success": False, "error": "Keine Hypothek vorhanden."}
         mortgage_val = field.price // 2
-        repay = int(mortgage_val * 1.1)  # +10% Zinsen
+        repay = int(mortgage_val * 1.1)
         if player.money < repay:
             return {"success": False, "error": f"Nicht genug Geld. Rückzahlung: {repay} €"}
         field.is_mortgaged = False
@@ -882,10 +830,7 @@ class Game:
         self._sys_chat(f"✅ {username} löst Hypothek auf {field.name} ab: -{repay} €")
         return {"success": True}
 
-    # ── Jail Card ────────────────────────────────────────────
-
     def use_jail_card(self, username: str) -> dict:
-        """Nutzt eine Gefängnisfreikarte."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
@@ -901,10 +846,7 @@ class Game:
         self._sys_chat(f"🃏 {username} nutzt eine Gefängnisfreikarte!")
         return {"success": True}
 
-    # ── Jail Buyout ──────────────────────────────────────────
-
     def buy_out_of_jail(self, username: str) -> dict:
-        """Spieler kauft sich für 50 € aus dem Gefängnis frei."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
@@ -913,7 +855,7 @@ class Game:
         if player.money < 50:
             return {"success": False, "error": "Nicht genug Geld (50 € Kaution)."}
         player.money -= 50
-        self.free_parking_pot += 50  # Kaution geht in den Topf
+        self.free_parking_pot += 50
         player.in_jail = False
         player.jail_turns = 0
         self.status_message = f"{username} zahlt 50 € Kaution und kommt frei!"
@@ -921,17 +863,13 @@ class Game:
         self._sys_chat(f"🔓 {username} hat sich für 50 € aus dem Gefängnis freigekauft")
         return {"success": True}
 
-    # ── Player Management ────────────────────────────────────
-
     def disconnect_player(self, username: str) -> dict:
-        """Markiert Spieler als disconnected. Geld/Grundstücke bleiben bis zum Bankrott."""
         player = next((p for p in self.players if p.username == username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
         player.is_disconnected = True
         self._sys_chat(f"👋 {username} hat den Raum verlassen.")
         self.status_message = f"{username} hat das Spiel verlassen."
-        # If it was their turn, advance
         if self.players[self.current_player_index].username == username:
             active = [p for p in self.players if not p.is_bankrupt and not p.is_disconnected]
             if active:
@@ -942,13 +880,11 @@ class Game:
         return {"success": True}
 
     def kick_player(self, host_id: str, target_username: str) -> dict:
-        """Host entfernt einen Spieler. Grundstücke gehen zurück an die Bank."""
         if self.host_id != host_id:
             return {"success": False, "error": "Nur der Host kann Spieler entfernen."}
         player = next((p for p in self.players if p.username == target_username), None)
         if not player:
             return {"success": False, "error": "Spieler nicht gefunden."}
-        # Confiscate properties
         for prop in player.properties:
             prop.owner = None
             prop.houses = 0
@@ -958,7 +894,6 @@ class Game:
         player.is_bankrupt = True
         self._sys_chat(f"🚫 {target_username} wurde vom Host aus dem Spiel entfernt.")
         self.status_message = f"{target_username} wurde entfernt."
-        # Advance turn if it was their turn
         if self.players[self.current_player_index].username == target_username:
             active = [p for p in self.players if not p.is_bankrupt and not p.is_disconnected]
             if active:
@@ -967,8 +902,6 @@ class Game:
                 self.can_buy = False
                 self.turn_phase = "roll"
         return {"success": True}
-
-    # ── Turn ─────────────────────────────────────────────────
 
     def _next_player(self):
         active = [p for p in self.players if not p.is_bankrupt and not p.is_disconnected]
@@ -979,8 +912,6 @@ class Game:
         while self.players[idx].is_bankrupt or self.players[idx].is_disconnected:
             idx = (idx + 1) % len(self.players)
         self.current_player_index = idx
-
-    # ── Serialise ────────────────────────────────────────────
 
     def _player_to_dict(self, player: Player) -> dict:
         data = player.to_dict()
@@ -1026,7 +957,6 @@ class Game:
                     "can_mortgage": not field.is_mortgaged,
                     "can_unmortgage": field.is_mortgaged and player.money >= repay_val2
                 })
-        # Sort by GROUP_ORDER then by price within group
         def sort_key(p):
             cg = p.get("color_group","special")
             try: gi = GROUP_ORDER.index(cg)
@@ -1050,14 +980,14 @@ class Game:
             "last_event": self.last_event,
             "pending_rent": self.pending_rent,
             "incoming_rent_offer": self.incoming_rent_offer,
-            "pending_tax": self.pending_tax,          # NEU
+            "pending_tax": self.pending_tax,
             "incoming_trade": self.active_trade,
             "last_move": self.last_move,
             "host_username": self.host_username,
             "pending_card": self.pending_card,
             "winner": self.last_event.get("player") if self.last_event and self.last_event.get("type") == "winner" else None,
             "free_parking_pot": self.free_parking_pot,
-            "chat_messages": self.chat_messages[-80:],  # last 80 messages
+            "chat_messages": self.chat_messages[-80:],
         }
 
 

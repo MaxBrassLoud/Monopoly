@@ -21,9 +21,6 @@ DISCORD_CLIENT_SECRET = os.getenv("DISCORD_CLIENT_SECRET")
 
 create_database()
 
-
-# ── Helpers ──────────────────────────────────────────────────
-
 def hash_password(pw: str) -> str:
     return hashlib.sha256(pw.encode()).hexdigest()
 
@@ -56,8 +53,6 @@ def get_current_game():
     return active_games[code], code
 
 
-# ── Pages ─────────────────────────────────────────────────────
-
 @app.route('/')
 @login_required
 def home():
@@ -82,8 +77,6 @@ def logout():
 def dice_deals():
     return render_template("dice-deals.html", room_code=get_room_code() or "")
 
-
-# ── Auth ──────────────────────────────────────────────────────
 
 @app.route('/api/v1/register', methods=['POST'])
 def register():
@@ -117,9 +110,6 @@ def login():
     session["user_id"] = user[0]
     session["username"] = user[1]
     return jsonify({"message": "Login erfolgreich"}), 200
-
-
-# ── Discord OAuth ─────────────────────────────────────────────
 
 @app.route('/login/discord')
 def discord_login():
@@ -162,9 +152,6 @@ def discord_callback():
     session["username"] = username
     return redirect("/")
 
-
-# ── Room API ──────────────────────────────────────────────────
-
 @app.route('/api/room/create', methods=['POST'])
 @login_required
 def create_room():
@@ -175,7 +162,6 @@ def create_room():
     active_games[code] = game
     session["room_code"] = code
     return jsonify({"code": code, "is_host": True}), 201
-
 
 @app.route('/api/room/join', methods=['POST'])
 @login_required
@@ -189,7 +175,6 @@ def join_room():
     session["room_code"] = code
     return jsonify({"code": code}), 200
 
-
 @app.route('/api/room/leave', methods=['POST'])
 @login_required
 def leave_room():
@@ -198,7 +183,6 @@ def leave_room():
         game.disconnect_player(session["username"])
     session.pop("room_code", None)
     return jsonify({"message": "Raum verlassen"}), 200
-
 
 @app.route('/api/room/info')
 @login_required
@@ -210,9 +194,6 @@ def room_info():
     is_host = game.host_id == session.get("user_id","")
     return jsonify({"in_room": True, "code": code, "player_count": len(game.players), "is_host": is_host}), 200
 
-
-# ── Game State ────────────────────────────────────────────────
-
 @app.route('/api/game/state')
 @login_required
 def game_state():
@@ -221,9 +202,6 @@ def game_state():
         return jsonify({"error": "Kein Raum beigetreten"}), 400
     return jsonify(game.to_dict())
 
-
-# ── Game Actions ──────────────────────────────────────────────
-
 def _require_my_turn(game):
     if not game.players:
         return jsonify({"error": "Kein aktives Spiel"}), 400
@@ -231,7 +209,6 @@ def _require_my_turn(game):
     if current.user_id != session["user_id"]:
         return jsonify({"error": "Du bist nicht dran"}), 403
     return None
-
 
 @app.route('/api/game/roll', methods=['POST'])
 @login_required
@@ -251,7 +228,6 @@ def roll_dice():
     game.roll_dice()
     return jsonify(game.to_dict())
 
-
 @app.route('/api/game/buy', methods=['POST'])
 @login_required
 def buy_property():
@@ -263,7 +239,6 @@ def buy_property():
         return err
     success = game.buy_property()
     return jsonify({"success": success, **game.to_dict()})
-
 
 @app.route('/api/game/build', methods=['POST'])
 @login_required
@@ -283,7 +258,6 @@ def build_property():
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Bauen fehlgeschlagen")}), 400
     return jsonify(game.to_dict())
-
 
 @app.route('/api/game/join', methods=['POST'])
 @login_required
@@ -415,9 +389,6 @@ def end_turn():
     game.status_message = f"{game.players[game.current_player_index].username} ist dran."
     return jsonify(game.to_dict())
 
-
-# ── Rent Confirmation ─────────────────────────────────────────
-
 @app.route('/api/game/pay_rent', methods=['POST'])
 @login_required
 def pay_rent():
@@ -457,9 +428,6 @@ def respond_rent_offer():
         return jsonify({"error": result.get("error", "Fehler")}), 400
     return jsonify(game.to_dict())
 
-
-# ── Tax Confirmation (NEU) ────────────────────────────────────
-
 @app.route('/api/game/pay_tax', methods=['POST'])
 @login_required
 def pay_tax():
@@ -470,9 +438,6 @@ def pay_tax():
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Fehler")}), 400
     return jsonify(game.to_dict())
-
-
-# ── Trade API ─────────────────────────────────────────────────
 
 @app.route('/api/trade/send', methods=['POST'])
 @login_required
@@ -514,9 +479,6 @@ def trade_respond():
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Fehler")}), 400
     return jsonify(game.to_dict())
-
-
-# ── Chat API ──────────────────────────────────────────────────
 
 @app.route('/api/game/chat', methods=['POST'])
 @login_required
