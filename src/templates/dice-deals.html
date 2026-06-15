@@ -1013,9 +1013,10 @@ function renderProps(s) {
 function updateBtns(s) {
     const my = s.current_player===ME;
     const ph = s.turn_phase;
-    document.getElementById("btn-roll").disabled = !my||ph!=="roll"||!!s.pending_tax||!!s.pending_rent||!!s.pending_card;
-    document.getElementById("btn-end").disabled = !my||ph==="roll"||!!s.pending_tax||!!s.pending_rent||!!s.pending_card;
-    document.getElementById("btn-end").disabled = !my||ph==="roll";
+    const hasPendingAction = !!s.pending_tax||!!s.pending_rent||!!s.pending_card;
+    document.getElementById("btn-roll").disabled = !my||ph!=="roll"||hasPendingAction||!!s.can_buy;
+    document.getElementById("btn-buy").disabled = !my||!s.can_buy||hasPendingAction;
+    document.getElementById("btn-end").disabled = !my||ph==="roll"||hasPendingAction;
     document.getElementById("status-box").textContent = s.status||"";
     const me = s.players?.find(p=>p.username===ME);
     const jailBtn = document.getElementById("btn-jail-buy");

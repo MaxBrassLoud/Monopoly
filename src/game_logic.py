@@ -644,7 +644,8 @@ class Game:
         payer = next((p for p in self.players if p.username == payer_username), None)
         if not payer:
             return {"success": False, "error": "Spieler nicht gefunden."}
-        amount = self.pending_tax["amount"]
+        tax = self.pending_tax
+        amount = tax["amount"]
         self.pending_tax = None
 
         if payer.money >= amount:
@@ -664,7 +665,7 @@ class Game:
                 self.pending_tax = {
                     "payer": payer_username,
                     "amount": amount,
-                    "field_name": self.pending_tax.get("field_name", "Steuer"),
+                    "field_name": tax.get("field_name", "Steuer"),
                 }
                 return {"success": False, "error":
                     f"Nicht genug Bargeld ({payer.money} €). "
@@ -720,6 +721,8 @@ class Game:
         if action == "counter":
             if not counter:
                 return {"success": False, "error": "Kein Gegenangebot angegeben."}
+            if counter.get("my_money", 0) < 0 or counter.get("their_money", 0) < 0:
+                return {"success": False, "error": "Negativer Geldbetrag nicht möglich."}
             new_trade = {
                 "from": responder,
                 "to": trade["from"],
@@ -753,6 +756,9 @@ class Game:
 
         sender_pays = trade.get("my_money", 0)
         receiver_pays = trade.get("their_money", 0)
+        if sender_pays < 0 or receiver_pays < 0:
+            self.active_trade = None
+            return {"success": False, "error": "Negativer Geldbetrag nicht möglich."}
 
         if sender_pays > 0:
             if sender.money < sender_pays:

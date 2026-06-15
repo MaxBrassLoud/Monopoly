@@ -297,7 +297,7 @@
             <div class="input-group">
                 <label>🔒 Passwort</label>
                 <div class="input-wrapper">
-                    <input type="password" id="regPassword" placeholder="mind. 4 Zeichen" autocomplete="new-password">
+                    <input type="password" id="regPassword" placeholder="mind. 6 Zeichen" autocomplete="new-password">
                 </div>
                 <div id="regPasswordMsg" class="field-message"></div>
             </div>
@@ -407,12 +407,12 @@
         function validateUsername(username) {
             if (!username || username.trim() === '') return { valid: false, message: 'Benutzername fehlt.', type: 'error' };
             if (username.length < 3) return { valid: false, message: 'Mindestens 3 Zeichen.', type: 'error' };
-            if (username.length > 30) return { valid: false, message: 'Maximal 30 Zeichen.', type: 'error' };
+            if (username.length > 20) return { valid: false, message: 'Maximal 20 Zeichen.', type: 'error' };
             if (!/^[a-zA-Z0-9_\-]+$/.test(username)) return { valid: false, message: 'Nur Buchstaben, Zahlen, _ und - erlaubt.', type: 'error' };
             return { valid: true, message: '✓ Verfügbar', type: 'success' };
         }
 
-        function validatePassword(password, minLen = 4) {
+        function validatePassword(password, minLen = 6) {
             if (!password) return { valid: false, message: 'Passwort erforderlich.', type: 'error' };
             if (password.length < minLen) return { valid: false, message: `Mindestens ${minLen} Zeichen.`, type: 'error' };
             return { valid: true, message: '✓ Gültig', type: 'success' };
@@ -492,7 +492,7 @@
         }
         function showRegPwMsg() {
             if (!touched.regPw) { regPasswordMsg.innerHTML = ''; return; }
-            const result = validatePassword(regPassword.value, 4);
+            const result = validatePassword(regPassword.value, 6);
             regPasswordMsg.innerHTML = (result.type === 'error' ? '❌ ' : '✅ ') + result.message;
             regPasswordMsg.className = `field-message ${result.type}`;
             regPassword.style.borderColor = result.valid ? 'var(--border-subtle)' : 'var(--danger)';
@@ -559,8 +559,8 @@
                 if (res.status === 200) {
                     window.location.href = '/';
                 } else {
-                    const errorText = await res.text();
-                    loginGlobalMsg.textContent = errorText || 'Login fehlgeschlagen. Prüfe deine Zugangsdaten.';
+                    const data = await res.json().catch(() => ({}));
+                    loginGlobalMsg.textContent = data.error || 'Login fehlgeschlagen. Prüfe deine Zugangsdaten.';
                     loginGlobalMsg.classList.add('error');
                     loginGlobalMsg.style.display = 'block';
                 }
@@ -579,9 +579,9 @@
             showRegUserMsg(); showRegEmailMsg(); showRegPwMsg();
             const usernameValid = validateUsername(regUsername.value).valid;
             const emailCheck = validateEmailExtended(regEmail.value);
-            const passwordValid = validatePassword(regPassword.value, 4).valid;
+            const passwordValid = validatePassword(regPassword.value, 6).valid;
             if (!usernameValid || !emailCheck.valid || !passwordValid) {
-                registerGlobalMsg.textContent = '❌ Bitte alle Felder korrekt ausfüllen (Benutzername min. 3, gültige E-Mail, Passwort min. 4).';
+                registerGlobalMsg.textContent = '❌ Bitte alle Felder korrekt ausfüllen (Benutzername 3-20 Zeichen, gültige E-Mail, Passwort min. 6).';
                 registerGlobalMsg.classList.add('error');
                 registerGlobalMsg.style.display = 'block';
                 return;
@@ -597,7 +597,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const text = await res.text();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     registerGlobalMsg.classList.remove('error');
                     registerGlobalMsg.classList.add('success');
@@ -612,7 +612,7 @@
                         registerGlobalMsg.style.display = 'none';
                     }, 2000);
                 } else {
-                    registerGlobalMsg.textContent = text || 'Registrierung fehlgeschlagen (Benutzername evtl. vergeben).';
+                    registerGlobalMsg.textContent = data.error || 'Registrierung fehlgeschlagen (Benutzername evtl. vergeben).';
                     registerGlobalMsg.classList.add('error');
                     registerGlobalMsg.style.display = 'block';
                 }

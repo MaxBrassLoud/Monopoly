@@ -53,6 +53,13 @@ def get_current_game():
     return active_games[code], code
 
 
+def parse_int_field(value, default=0):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 @app.route('/')
 @login_required
 def home():
@@ -448,9 +455,9 @@ def trade_send():
     data = request.get_json(silent=True) or {}
     to = data.get("to", "").strip()
     my_props = data.get("my_props", [])
-    my_money = int(data.get("my_money", 0))
+    my_money = parse_int_field(data.get("my_money", 0))
     their_props = data.get("their_props", [])
-    their_money = int(data.get("their_money", 0))
+    their_money = parse_int_field(data.get("their_money", 0))
     result = game.send_trade(session["username"], to, my_props, my_money, their_props, their_money)
     if not result.get("success"):
         return jsonify({"error": result.get("error", "Fehler")}), 400
@@ -471,9 +478,9 @@ def trade_respond():
     if action == "counter":
         counter = {
             "my_props": data.get("my_props", []),
-            "my_money": int(data.get("my_money", 0)),
+            "my_money": parse_int_field(data.get("my_money", 0)),
             "their_props": data.get("their_props", []),
-            "their_money": int(data.get("their_money", 0))
+            "their_money": parse_int_field(data.get("their_money", 0))
         }
     result = game.respond_trade(session["username"], action, counter)
     if not result.get("success"):
