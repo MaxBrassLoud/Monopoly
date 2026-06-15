@@ -313,7 +313,7 @@
 
 <script>
     (function() {
-        // ---------- ERWEITERTE E-MAIL PRÜFUNG (clientseitig) ----------
+
         const COMMON_DOMAINS = [
             'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com',
             'protonmail.com', 'mail.com', 'web.de', 'gmx.de', 't-online.de',
@@ -418,13 +418,13 @@
             return { valid: true, message: '✓ Gültig', type: 'success' };
         }
 
-        // ----- DOM-Elemente -----
+
         const loginPanel = document.getElementById('loginPanel');
         const registerPanel = document.getElementById('registerPanel');
         const showRegisterLink = document.getElementById('showRegisterLink');
         const showLoginLink = document.getElementById('showLoginLink');
 
-        // Login Felder
+
         const loginUsername = document.getElementById('loginUsername');
         const loginPassword = document.getElementById('loginPassword');
         const loginUsernameMsg = document.getElementById('loginUsernameMsg');
@@ -432,7 +432,7 @@
         const loginGlobalMsg = document.getElementById('loginGlobalMsg');
         const loginForm = document.getElementById('loginForm');
 
-        // Register Felder
+
         const regUsername = document.getElementById('regUsername');
         const regEmail = document.getElementById('regEmail');
         const regPassword = document.getElementById('regPassword');
@@ -444,10 +444,10 @@
 
         const discordBtn = document.getElementById('discordBtn');
 
-        // ----- Touch-Flags (kein initiales Rot) -----
+
         const touched = { loginUser: false, loginPw: false, regUser: false, regEmail: false, regPw: false };
 
-        // Hilfsfunktionen für Anzeige (nur wenn getouched)
+
         function showLoginUserMsg() {
             if (!touched.loginUser) { loginUsernameMsg.innerHTML = ''; return; }
             const val = loginUsername.value.trim();
@@ -498,7 +498,7 @@
             regPassword.style.borderColor = result.valid ? 'var(--border-subtle)' : 'var(--danger)';
         }
 
-        // Event Listener für Touch
+
         loginUsername.addEventListener('input', () => { touched.loginUser = true; showLoginUserMsg(); });
         loginUsername.addEventListener('blur', () => { touched.loginUser = true; showLoginUserMsg(); });
         loginPassword.addEventListener('input', () => { touched.loginPw = true; showLoginPwMsg(); });
@@ -511,14 +511,14 @@
         regPassword.addEventListener('input', () => { touched.regPw = true; showRegPwMsg(); });
         regPassword.addEventListener('blur', () => { touched.regPw = true; showRegPwMsg(); });
 
-        // Panel wechseln (ohne reload, einfach hide/show)
+
         function showLogin() {
             loginPanel.classList.remove('hidden');
             registerPanel.classList.add('hidden');
-            // Fehlermeldungen zurücksetzen (global)
+
             loginGlobalMsg.style.display = 'none';
             registerGlobalMsg.style.display = 'none';
-            // Eingabefelder nicht leeren, aber touched Flags beibehalten
+
         }
         function showRegister() {
             loginPanel.classList.add('hidden');
@@ -536,7 +536,7 @@
             showLogin();
         });
 
-        // Login Submit
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             loginGlobalMsg.style.display = 'none';
@@ -571,7 +571,7 @@
             }
         });
 
-        // Registrierung Submit
+
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             registerGlobalMsg.style.display = 'none';
@@ -603,7 +603,6 @@
                     registerGlobalMsg.classList.add('success');
                     registerGlobalMsg.textContent = '✅ Registrierung erfolgreich! Du kannst dich jetzt anmelden.';
                     registerGlobalMsg.style.display = 'block';
-                    // Login-Felder vorbelegen und zum Login wechseln
                     loginUsername.value = payload.username;
                     loginPassword.value = '';
                     touched.loginUser = true; touched.loginPw = true;
@@ -624,7 +623,6 @@
             }
         });
 
-        // Discord
         discordBtn.addEventListener('click', () => {
             window.location.href = '/login/discord';
         });

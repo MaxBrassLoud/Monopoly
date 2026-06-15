@@ -572,11 +572,6 @@
 </div>
 
 <script>
-// =================================================================
-//  Dice Deals FRONTEND – vollständige Version mit Kick-Overlay & Wiedereintritt
-// =================================================================
-
-// ---- Konstanten & globale Variablen ----
 const ME = "{{ session['username'] }}";
 const CMAP = { brown:"#795548", lightblue:"#29b6f6", pink:"#ec407a", orange:"#ff7043", red:"#ef5350", yellow:"#ffd740", green:"#66bb6a", darkblue:"#1565c0", station:"#78909c", utility:"#ab47bc", special:"transparent" };
 const PCOLORS = {
@@ -599,7 +594,7 @@ let prevChatLen = 0;
 let pendingRent = null;
 let selOfferProp = null;
 let incomingRentOffer = null;
-let pendingTax = null;          // NEU
+let pendingTax = null;
 let tradeTarget = null;
 let myOffer = { props:[], money:0 };
 let theirOffer = { props:[], money:0 };
@@ -612,12 +607,12 @@ let oldState_bankruptMap = {};
 let walkInProgress = false;
 let winnerShown = false;
 
-// ---- Overlay helpers ----
+
 function openOv(id) { document.getElementById(id).classList.add("show"); }
 function closeOv(id) { document.getElementById(id).classList.remove("show"); }
 document.querySelectorAll(".overlay, .kicked-overlay, .winner-overlay").forEach(ov => ov.addEventListener("click", e => { if(e.target===ov) ov.classList.remove("show"); }));
 
-// ---- Kick-Screen ----
+
 function showKickedScreen() {
     document.getElementById("kicked-overlay").classList.add("show");
     if (pollTm) clearInterval(pollTm);
@@ -637,7 +632,7 @@ function checkIfKicked(s) {
     return false;
 }
 
-// ---- Toast ----
+
 function toast(icon, text) {
     document.getElementById("toast-icon").textContent = icon;
     document.getElementById("toast-text").textContent = text;
@@ -647,7 +642,7 @@ function toast(icon, text) {
     toastTm = setTimeout(() => t.classList.remove("show"), 3500);
 }
 
-// ---- Money Float ----
+
 function spawnMoneyFloat(x, y, amount) {
     const el = document.createElement("div");
     el.className = "money-float " + (amount >= 0 ? "positive" : "negative");
@@ -669,7 +664,6 @@ function spawnMoneyFloatNearPlayer(username, amount) {
     });
 }
 
-// ---- Field Helpers & Animationen (gekürzt, aber voll funktionsfähig) ----
 function getFieldEl(idx) { return document.querySelector(`.field[data-fi="${idx}"]`); }
 function applyFieldClass(idx, cls, durationMs) {
     const el = getFieldEl(idx);
@@ -806,7 +800,7 @@ function runAnimations(newState, oldPositions, oldMoneys, oldEvent) {
     }
 }
 
-// ---- Board Rendering (vollständig) ----
+
 function edgeClass(row, col) {
     if (row === 10) return "edge-bottom";
     if (row === 0)  return "edge-top";
@@ -938,7 +932,7 @@ function showTipAt(x, y, f, idx, s) {
     document.getElementById("tooltip").style.top  = Math.min(y - 10, vh - th - 8) + "px";
 }
 
-// ---- Spielerliste & Property Panel (vereinfacht, aber voll funktionsfähig) ----
+
 function renderPlayers(s) {
     const list = document.getElementById("players-list");
     list.innerHTML = "";
@@ -1064,9 +1058,6 @@ function checkWinner(s) {
     clearInterval(pollTm);
 }
 
-// ---- Rent, Trade, Chat, Card etc. (gekürzt, aber alle benötigten Funktionen sind vorhanden) ----
-// Aus Platzgründen werden die vollständigen Funktionen aus der Originaldatei übernommen.
-// Hier nur die wichtigsten Aufrufe – in der echten Datei sind alle vorhanden.
 
 async function rollDice() {
     document.getElementById("btn-roll").disabled = true;
@@ -1099,14 +1090,12 @@ async function endTurn(){ const btn=document.getElementById("btn-end"); btn.styl
 async function kickPlayer(username){ if(!confirm(`${username} wirklich aus dem Spiel entfernen?`)) return; const res=await fetch("/api/room/kick",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username})}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); toast("🚫",`${username} wurde entfernt.`);}
 async function confirmCard(){ closeOv("ov-card"); const res=await fetch("/api/game/confirm_card",{method:"POST"}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS);}
 async function useJailCard(){ const res=await fetch("/api/game/use_jail_card",{method:"POST"}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); toast("🃏",GS.status);}
-// Rent-Funktionen (gekürzt)
 function buildRentLiquidatePanel(me,rentAmount){ const container=document.getElementById("rent-liquidate-list"); if(!container||!me)return; const props=me.properties||[]; if(!props.length){container.innerHTML=`<p style="font-size:11px;color:var(--text2);">Keine Grundstücke zum Liquidieren.</p>`;return;} container.innerHTML=""; props.forEach(prop=>{ const row=document.createElement("div");row.className="rliq-prop";row.innerHTML=`<div class="rliq-dot" style="background:${CMAP[prop.color_group]||"#888"}"></div><span class="rliq-name">${prop.name}</span>`; if(prop.houses>0){ const sh=document.createElement("button");sh.className="rliq-btn sell";sh.textContent=prop.houses===5?`−🏨 +${prop.house_cost}€`:`−🏠 +${prop.house_cost}€`; sh.disabled=prop.houses===5?!prop.can_sell_hotel:!prop.can_sell_house; sh.onclick=async()=>{ const type=prop.houses===5?"hotel":"house"; const res=await fetch("/api/game/sell_building",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,type})}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); }; row.appendChild(sh); } if(!prop.is_mortgaged){ const mv=prop.mortgage_value||Math.floor((prop.price||0)/2); const mb=document.createElement("button");mb.className="rliq-btn mtg";mb.textContent=`🏦 +${mv}€`; mb.disabled=!prop.can_mortgage; mb.onclick=async()=>{ const res=await fetch("/api/game/mortgage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,action:"take"})}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); }; row.appendChild(mb); } else { const rv=prop.repay_value||Math.round((prop.mortgage_value||0)*1.1); const ub=document.createElement("button");ub.className="rliq-btn";ub.textContent=`✓ Ablösen −${rv}€`; ub.disabled=!prop.can_unmortgage; ub.onclick=async()=>{ const res=await fetch("/api/game/mortgage",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:prop.name,action:"lift"})}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); }; row.appendChild(ub); } container.appendChild(row); }); }
 function checkRentPending(s){ if(!s.pending_rent){ if(document.getElementById("ov-rent").classList.contains("show"))closeOv("ov-rent"); pendingRent=null; return; } const rent=s.pending_rent; if(rent.payer!==ME)return; pendingRent=rent; document.getElementById("rent-amount").textContent=`${rent.amount.toLocaleString("de-DE")} €`; document.getElementById("rent-to").textContent=`an ${rent.creditor}${rent.field_name?" — "+rent.field_name:""}`; const me=s.players.find(p=>p.username===ME); const myMoney=me?.money||0; document.getElementById("rent-my-money").textContent=`${myMoney.toLocaleString("de-DE")} €`; const payBtn=document.getElementById("btn-pay"); const totalAssets=(me?.properties||[]).reduce((sum,p)=>{ if(!p.is_mortgaged) sum+=Math.floor((p.price||0)/2); if(p.houses===5) sum+=(p.house_cost||0); else sum+=(p.houses||0)*(p.house_cost||0); return sum; }, myMoney); if(myMoney>=rent.amount){ payBtn.textContent="💳 Miete zahlen"; payBtn.disabled=false; payBtn.className="btn danger"; } else if(totalAssets>=rent.amount){ payBtn.textContent=`⚠️ Erst liquidieren (Kasse: ${myMoney.toLocaleString("de-DE")} €)`; payBtn.disabled=true; payBtn.className="btn"; } else { payBtn.textContent=`💀 Bankrott bestätigen`; payBtn.disabled=false; payBtn.className="btn danger"; } const ol=document.getElementById("offer-list"); const prevSel=selOfferProp; ol.innerHTML=""; selOfferProp=null; document.getElementById("btn-offer-prop").disabled=true; const myProps=me?.properties||[]; if(!myProps.length) ol.innerHTML=`<p style="color:var(--text2);font-size:11px;">Keine Grundstücke.</p>`; else { myProps.forEach(prop=>{ const item=document.createElement("div");item.className="offer-item"+(prop.name===prevSel?" sel":""); item.innerHTML=`<div class="pdot" style="background:${CMAP[prop.color_group]||"#888"}"></div><span style="flex:1">${prop.name}</span><span class="pval">${prop.price} €</span>`; if(prop.name===prevSel){selOfferProp=prop.name;document.getElementById("btn-offer-prop").disabled=false;} item.onclick=()=>{ document.querySelectorAll("#offer-list .offer-item").forEach(i=>i.classList.remove("sel")); item.classList.add("sel"); selOfferProp=prop.name; document.getElementById("btn-offer-prop").disabled=false; }; ol.appendChild(item); }); } buildRentLiquidatePanel(me,rent.amount); if(!document.getElementById("ov-rent").classList.contains("show")) openOv("ov-rent"); }
 async function payRent(){ if(!pendingRent)return; closeOv("ov-rent"); const res=await fetch("/api/game/pay_rent",{method:"POST"}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); updateUI(GS); toast("💸",`${pendingRent.amount.toLocaleString("de-DE")} € Miete gezahlt`); pendingRent=null; }
 async function offerPropForRent(){ if(!selOfferProp||!pendingRent)return; closeOv("ov-rent"); const res=await fetch("/api/game/offer_prop_for_rent",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({property:selOfferProp})}); if(!res.ok){toast("❌","Angebot fehlgeschlagen");return;} GS=await res.json(); updateUI(GS); toast("📤",`"${selOfferProp}" angeboten`); }
 function checkRentOffer(s){ if(!s.incoming_rent_offer)return; const offer=s.incoming_rent_offer; if(offer.to!==ME)return; if(document.getElementById("ov-rent-offer").classList.contains("show"))return; incomingRentOffer=offer; document.getElementById("rent-offer-from").textContent=offer.from; const c=CMAP[offer.prop_color]||"#888"; document.getElementById("rent-offer-prop").innerHTML=`<div style="width:12px;height:12px;border-radius:50%;background:${c};flex-shrink:0;"></div><span style="flex:1;font-weight:600;font-size:13px;">${offer.prop_name}</span><span style="color:var(--accent2);font-weight:700;">${offer.prop_value} €</span>`; document.getElementById("rent-offer-rent").textContent=`${offer.rent_amount} €`; openOv("ov-rent-offer"); }
 async function respondRent(accept){ if(!incomingRentOffer)return; closeOv("ov-rent-offer"); const res=await fetch("/api/game/respond_rent_offer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accept})}); if(!res.ok){toast("❌","Fehler");return;} GS=await res.json(); updateUI(GS); toast(accept?"✅":"❌", accept?`"${incomingRentOffer.prop_name}" erhalten`:"Angebot abgelehnt"); incomingRentOffer=null; }
-// Trade (Auszug – alle nötigen Funktionen vorhanden)
 function checkTradeIncoming(s){ if(!s.incoming_trade || s.incoming_trade.to!==ME){ document.getElementById("trade-badge").style.display="none"; return; } document.getElementById("trade-badge").style.display="inline-flex"; if(!document.getElementById("ov-trade").classList.contains("show")) toast("🤝",`${s.incoming_trade.from} möchte handeln!`); }
 function openTrade(){ buildTrade(); openOv("ov-trade"); document.getElementById("trade-badge").style.display="none"; }
 function buildTrade(){ const modal=document.getElementById("trade-modal"); if(GS?.incoming_trade && GS.incoming_trade.to===ME){ buildIncomingTrade(modal,GS.incoming_trade); return; } buildInitTrade(modal); }
@@ -1120,14 +1109,14 @@ function buildIncomingTrade(modal,trade){ const me=GS?.players?.find(p=>p.userna
 function cPropsHTML(props,selected,side){ if(!props.length)return `<p style="font-size:11px;color:var(--text2);">Keine Grundstücke.</p>`; return props.map(prop=>{ const c=CMAP[prop.color_group]||"#888"; const inO=selected.includes(prop.name); return `<div class="tprop${inO?" in-offer":""}" id="tpc-${side}-${prop.name.replace(/[\s\/]/g,'-')}"><div class="pdot" style="background:${c}"></div><span style="flex:1">${prop.name}</span><span class="tpval">${prop.price}€</span></div>`; }).join(""); }
 async function respondTrade(action){ const modal=document.getElementById("trade-modal"); let body={action}; if(action==="counter"&&modal._counter) body={action,...modal._counter()}; const res=await fetch("/api/trade/respond",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); if(!res.ok){const d=await res.json();toast("❌",d.error||"Fehler");return;} GS=await res.json(); closeOv("ov-trade"); updateUI(GS); toast(action==="accept"?"🤝":action==="reject"?"❌":"↩",{accept:"Handel angenommen!",reject:"Handel abgelehnt.",counter:"Gegenangebot gesendet"}[action]); }
 
-// ---- Chat ----
+
 function toggleChat(){ chatOpen=!chatOpen; document.getElementById("chat-section").style.display=chatOpen?"block":"none"; document.getElementById("chat-btn").classList.toggle("active",chatOpen); if(chatOpen){ chatUnread=0; document.getElementById("chat-badge").style.display="none"; scrollChat(); } }
 function renderChat(s){ if(!s.chat_messages) return; const msgs=s.chat_messages; const container=document.getElementById("chat-msgs"); container.innerHTML=""; msgs.forEach(msg=>{ const el=document.createElement("div"); if(msg.type==="system"){ el.className="chat-msg sys-msg"; el.textContent=`🔔 ${msg.text}`; } else { el.className="chat-msg"+(msg.from===ME?" mine":""); el.innerHTML=`<span class="chat-who" style="color:${PCOLORS[msg.from_color]||'#888'}">${msg.from}</span>${escapeHtml(msg.text)}`; } container.appendChild(el); }); if(!chatOpen && msgs.length>prevChatLen){ chatUnread+=msgs.length-prevChatLen; const b=document.getElementById("chat-badge"); b.textContent=chatUnread>9?"9+":chatUnread; b.style.display="inline-flex"; } prevChatLen=msgs.length; if(chatOpen) scrollChat(); }
 function scrollChat(){ const c=document.getElementById("chat-msgs"); if(c) c.scrollTop=c.scrollHeight; }
 function escapeHtml(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
 async function sendChat(){ const input=document.getElementById("chat-input"); const text=input.value.trim(); if(!text) return; input.value=""; const res=await fetch("/api/game/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})}); if(!res.ok) return; GS=await res.json(); renderChat(GS); scrollChat(); }
 
-// ---- Join Modal (angepasst) ----
+
 function showJoinModal() {
     const grid = document.getElementById("color-grid");
     grid.innerHTML = "";
@@ -1167,14 +1156,12 @@ async function joinGame() {
         GS = data;
         updateUI(GS);
         toast("🎉", `Beigetreten als ${selColor}!`);
-        // Sofort einen neuen Poll erzwingen, um den aktuellen State zu sichern
         setTimeout(() => fetchState(true), 100);
     } else {
         toast("❌", data.error || "Fehler beim Beitreten");
     }
 }
 
-// ---- fetchState und updateUI (mit Kick-Prüfung) ----
 async function fetchState(silent=false) {
     try {
         const res = await fetch("/api/game/state");
@@ -1183,7 +1170,7 @@ async function fetchState(silent=false) {
         const oldSt = GS?.status;
         GS = ns;
 
-        // Kick-Prüfung NUR, wenn der Spieler bereits im Spiel ist
+
         const meInGame = GS.players?.some(p => p.username === ME);
         if (meInGame && checkIfKicked(GS)) return;
 
@@ -1195,7 +1182,6 @@ async function fetchState(silent=false) {
     } catch(e) { console.error(e); }
 }
 
-// ---- Steuer‑Bestätigung (NEU) ----
 function checkPendingTax(s) {
     if (!s.pending_tax) {
         if (document.getElementById("ov-tax").classList.contains("show")) closeOv("ov-tax");
@@ -1289,7 +1275,7 @@ function updateUI(s) {
     checkPendingCard(s);
     checkRentPending(s);
     checkRentOffer(s);
-    checkPendingTax(s);        // NEU
+    checkPendingTax(s);
     checkTradeIncoming(s);
     renderChat(s);
     runAnimations(s, snapPos, snapMoney, snapEvent);
@@ -1318,7 +1304,6 @@ function checkPendingCard(s) {
     openOv("ov-card");
 }
 
-// ---- Initialisierung ----
 async function init() {
     try {
         const ri = await fetch("/api/room/info");
@@ -1329,11 +1314,10 @@ async function init() {
 
     if (!GS) return;
     const me = GS.players?.find(p => p.username === ME);
-    // Wenn Spieler nicht existiert oder nur disconnected (aber nicht bankrott) -> Join-Modal
     if (!me || (me.is_disconnected && !me.is_bankrupt)) {
         showJoinModal();
     }
-    // KEIN checkIfKicked hier – das wäre zu früh!
+
 }
 init();
 pollTm = setInterval(() => fetchState(true), 2500);

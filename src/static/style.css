@@ -1,4 +1,4 @@
-/* ===== BASIS ===== */
+
 * {
     margin: 0;
     padding: 0;
@@ -16,7 +16,6 @@ body {
     padding: 1.5rem;
 }
 
-/* ===== KARTE (GLASMORPHISMUS) ===== */
 .card {
     background: rgba(20, 28, 45, 0.75);
     backdrop-filter: blur(12px);
@@ -36,7 +35,6 @@ body {
     transform: translateY(-4px);
 }
 
-/* ===== TYPOGRAPHIE ===== */
 h1, h2 {
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -56,7 +54,6 @@ h2 {
     color: #f1f5f9;
 }
 
-/* ===== EINGABEFELDER ===== */
 input {
     display: block;
     width: 100%;
@@ -83,7 +80,6 @@ input:focus {
     box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
 }
 
-/* ===== BUTTONS ===== */
 button {
     display: inline-block;
     width: 100%;
@@ -113,7 +109,6 @@ button:active {
     box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.5);
 }
 
-/* Discord Button speziell */
 .discord-btn {
     background: linear-gradient(135deg, #5865F2, #4752c4);
     box-shadow: 0 8px 20px -6px rgba(88, 101, 242, 0.4);
@@ -125,7 +120,6 @@ button:active {
     box-shadow: 0 12px 24px -8px rgba(88, 101, 242, 0.6);
 }
 
-/* ===== TRENNLINIE / TEXT ===== */
 p {
     margin: 1.5rem 0 1rem;
     color: #94a3b8;
@@ -151,14 +145,14 @@ p::after {
     right: 0;
 }
 
-/* ===== DASHBOARD SPEZIFISCH ===== */
+
 .card a {
     text-decoration: none;
     display: inline-block;
     margin-top: 2rem;
 }
 
-/* Logout Button als Outline */
+
 .card a button {
     background: transparent;
     border: 1.5px solid rgba(255, 255, 255, 0.2);
@@ -176,7 +170,7 @@ p::after {
     transform: translateY(-2px);
 }
 
-/* Responsive Anpassungen */
+
 @media (max-width: 480px) {
     .card {
         padding: 2rem 1.5rem;
@@ -192,7 +186,6 @@ p::after {
     }
 }
 
-/* Bau-Buttons */
 .prop-row {
     display: flex;
     align-items: center;
